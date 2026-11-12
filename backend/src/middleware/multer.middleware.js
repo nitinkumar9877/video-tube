@@ -1,15 +1,41 @@
-const multer = require('multer');
+const multer = require("multer");
 
-let storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'uploads/');
+const allowedImageTypes = new Set([
+    "image/jpeg",
+    "image/png",
+    "image/webp"
+]);
+
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+        fileSize: 5 * 1024 * 1024,
+        files: 1
     },
-    filename: function (req, file, cb) {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, file.originalname + '-' + uniqueSuffix + '-' + file.fieldname);
+    fileFilter: (req, file, callback) => {
+        if (!allowedImageTypes.has(file.mimetype)) {
+            return callback(new Error("Only JPEG, PNG, and WebP images are allowed"));
+        }
+
+        return callback(null, true);
     }
 });
 
-const upload = multer({ storage: storage });
+const uploadAvatar = (req, res, next) => {
+    upload.single("avatar")(req, res, (error) => {
+        if (!error) {
+            return next();
+        }
 
-module.exports = upload;
+        if (error instanceof multer.MulterError || error.message === "Only JPEG, PNG, and WebP images are allowed") {
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+        }
+
+        return next(error);
+    });
+};
+
+module.exports = uploadAvatar;

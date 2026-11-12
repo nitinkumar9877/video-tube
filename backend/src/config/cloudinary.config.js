@@ -1,23 +1,62 @@
-const cloudinary = require('cloudinary').v2;
+const cloudinary = require("cloudinary").v2;
 const configData = require("./environment.config.js");
-const fs = require('fs');
+const fs = require("fs");
+
+cloudinary.config({
+    cloud_name: configData.CLOUDINARY_CLOUD_NAME,
+    api_key: configData.CLOUDINARY_API_KEY,
+    api_secret: configData.CLOUDINARY_API_SECRET
+});
 
 const uploadOnCloudinary = async (filePath) => {
-    cloudinary.config({
-        cloud_name: configData.CLOUDINARY_CLOUD_NAME,
-        api_key: configData.CLOUDINARY_API_KEY,
-        api_secret: configData.CLOUDINARY_API_SECRET
-    });
+    if (!filePath) return null;
+
     try {
-        if (!filePath) return null;
-        const result = await cloudinary.uploader.upload(filePath, { resource_type: "auto" });
-        // Delete the local file after successful upload
-        fs.unlinkSync(filePath);
+        console.log("---------------------- Welcome to uploadOnCloudinary function ---------------------------");
+        const fs = require("fs");
+        console.log("cloud Config:", cloudinary.config());
+
+        console.log("File path:", filePath);
+        console.log("File exists:", fs.existsSync(filePath));
+
+        if (fs.existsSync(filePath)) {
+            console.log("File size:", fs.statSync(filePath).size);
+        }
+        const fileName = filePath.split("/").pop();
+
+        const localFilePath = `uploads/${fileName}`;
+        console.log("Local file path:", localFilePath);
+
+        const result = await cloudinary.uploader.upload(localFilePath, {
+            folder: "uploads",
+            use_filename: true,
+            unique_filename: false,
+            overwrite: true
+        });
+
+        console.log("Cloudinary upload successful:", {
+            public_id: result.public_id,
+            secure_url: result.secure_url
+        });
+
         return result.secure_url;
+
     } catch (error) {
-        console.error("Error uploading to Cloudinary:", error);
-        fs.unlinkSync(filePath); // Delete the local file even if upload fails
+        console.error("Cloudinary Upload Failed:", {
+            message: error.message,
+            http_code: error.http_code,
+            name: error.name,
+            error: error.error
+        });
+
         throw error;
+
+    } finally {
+        if (fs.existsSync(localFilePath)) {
+            await fs.promises.unlink(localFilePath).catch(err => {
+                console.error("Local file cleanup failed:", err.message);
+            });
+        }
     }
 };
 

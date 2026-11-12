@@ -1,66 +1,115 @@
 const userModel = require("../models/user.model");
-const uploadOnCloudinary = require("../config/cloudinary.config.js");
+const imagekit = require("../config/imagekit.config.js");
 const { generateToken } = require("../config/token.config.js");
 const validator = require("validator");
 const bcrypt = require("bcryptjs");
 
 const signUp = async (req, res) => {
-    // Implementation for sign up
     try {
-        console.log("1st");
-        const { username, email, password } = req.body;
-        console.log("2nd");
-        let photoUrl;
-        if (req.file) {
-            photoUrl = await uploadOnCloudinary(req.file.path);
-        }
-        console.log("3rd");
+        const username = req.body.username?.trim();
+        const email = req.body.email?.trim().toLowerCase();
+        const { password } = req.body;
 
-        const exisitingUser = await userModel.findOne({ email });
-        if (exisitingUser) {
-            return res.status(400).json({ message: "User already exists" });
+        if (!username || !email || !password) {
+            return res.status(400).json({
+                message: "All fields are required"
+            });
         }
-        console.log("4th");
 
-        // Validate email and password
         if (!validator.isEmail(email)) {
-            return res.status(400).json({ message: "Invalid email format" });
+            return res.status(400).json({
+                message: "Invalid email format"
+            });
         }
-        console.log("5th");
 
-        if (!validator.isStrongPassword(password, { minLength: 8 })) {
-            return res.status(400).json({ message: "Password must be at least 8 characters long and include uppercase, lowercase, number, and symbol" });
+        if (!validator.isStrongPassword(password, {
+            minLength: 8,
+            minLowercase: 1,
+            minUppercase: 1,
+            minNumbers: 1,
+            minSymbols: 1
+        })) {
+            return res.status(400).json({
+                message: "Password must contain uppercase, lowercase, number and symbol"
+            });
         }
-        console.log("6th");
+
+        const existingUser = await userModel.findOne({
+            $or: [
+                { email },
+                { username }
+            ]
+        });
+
+        if (existingUser) {
+            return res.status(409).json({
+                message: "Username or email already exists"
+            });
+        }
+
+        if (!req.file) {
+            return res.status(400).json({
+                message: "Profile picture is required"
+            });
+        }
+
+        const uploadedImage = await imagekit.upload({
+            file: req.file.buffer,
+            fileName: req.file.originalname,
+            folder: "/profile-pictures",
+            useUniqueFileName: true
+        });
+        if (!uploadedImage.url) {
+            throw new Error("ImageKit did not return an image URL");
+        }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        console.log("7th");
 
-        const newUser = new userModel({
+        const newUser = await userModel.create({
             username,
             email,
             password: hashedPassword,
-            photoUrl
+            profilePictureUrl: uploadedImage.url
         });
-        console.log("8th");
 
-        await newUser.save();
-        console.log("9th");
+        const token = generateToken({
+            id: newUser._id
+        });
 
-        let token = generateToken({ id: newUser._id });
-        console.log("10th");
+        if (!token) {
+            throw new Error("Token generation failed");
+        }
 
-        res.cookie("token", token, { httpOnly: true, secure: false, sameSite: "Strict", maxAge: 7 * 24 * 60 * 60 * 1000 }); // 1 week
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        });
 
-        console.log("11th");
-        res.status(201).json({ message: "User created successfully", token });
+        return res.status(201).json({
+            success: true,
+            message: "User created successfully",
+            user: {
+                id: newUser._id,
+                username: newUser.username,
+                email: newUser.email,
+                profilePictureUrl: newUser.profilePictureUrl
+            }
+        });
 
     } catch (error) {
-        console.error("Catch block error");
-        console.error("Error during sign up:", error);
-        res.status(500).json({ message: "Internal server error" });
+        console.error("Signup Error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Signup failed",
+            error: process.env.NODE_ENV === "development"
+                ? error.message
+                : undefined
+        });
     }
-}
+};
 
 const login = async (req, res) => {
     // Implementation for login

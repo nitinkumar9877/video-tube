@@ -1,52 +1,481 @@
+
+/* =================================
+   MAIN REGISTER PAGE
+================================= */
+
+.registerPage {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 16px;
+    overflow: hidden;
+    background: #0f0f0f;
+}
+
+/* Background Effects */
+
+.backgroundEffectOne {
+    position: absolute;
+    top: -150px;
+    left: -100px;
+    width: 350px;
+    height: 350px;
+    background: rgba(37, 99, 235, 0.1);
+    border-radius: 50%;
+    filter: blur(120px);
+    pointer-events: none;
+}
+
+.backgroundEffectTwo {
+    position: absolute;
+    bottom: -150px;
+    right: -100px;
+    width: 350px;
+    height: 350px;
+    background: rgba(220, 38, 38, 0.1);
+    border-radius: 50%;
+    filter: blur(120px);
+    pointer-events: none;
+}
+
+/* =================================
+   REGISTER CARD
+================================= */
+
+.registerCard {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 480px;
+    padding: 30px 35px;
+    background: rgba(24, 24, 24, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+    box-shadow: 0 20px 80px rgba(0, 0, 0, 0.5);
+}
+
+/* =================================
+   HEADER
+================================= */
+
+.header {
+    margin-bottom: 25px;
+}
+
+.headerTop {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 22px;
+    color: #ffffff;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.backButton {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999999;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.backButton:hover:not(:disabled) {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.backButton:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.logoContainer {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 12px;
+}
+
+.logo {
+    width: 55px;
+    height: 55px;
+    object-fit: contain;
+    border-radius: 50%;
+}
+
+.header h1 {
+    color: #ffffff;
+    font-size: 27px;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 7px;
+}
+
+.header > p {
+    color: #999999;
+    font-size: 13px;
+    text-align: center;
+}
+
+/* =================================
+   STEP INDICATOR
+================================= */
+
+.stepIndicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 13px;
+}
+
+.stepBar {
+    height: 5px;
+    flex: 1;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    transition: background 0.3s ease;
+}
+
+.activeStep {
+    background: #3b82f6;
+}
+
+.stepCount {
+    color: #777777;
+    font-size: 11px;
+    text-align: right;
+    margin-bottom: 20px;
+}
+
+/* =================================
+   STEP CONTENT
+================================= */
+
 .stepIndicatorDiv {
     padding: 8px;
     padding-left: 20px;
     padding-right: 20px;
 }
 
-.stepIndicator {
-    margin-bottom: 13px;
+.stepHeading {
+    margin-bottom: 22px;
 }
 
 .stepIndicatorHeading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #ffffff;
+    font-size: 22px;
+    font-weight: 600;
     margin-bottom: 13px;
 }
 
-.stepIndicatorDescription {
-    padding-bottom: 5px;
+.headingIcon {
+    color: #60a5fa;
+    font-size: 21px;
 }
+
+.stepIndicatorDescription {
+    color: #999999;
+    font-size: 13px;
+    line-height: 1.6;
+    padding-bottom: 5px;
+    padding-left: 33px;
+}
+
+/* =================================
+   INPUT FIELDS
+================================= */
 
 .inputFieldBox {
     margin-bottom: 8px;
     padding: 8px;
 }
 
-.continueButton {
-    padding: 8px;
-    margin-bottom: 4px;
-
+.inputFieldBox label {
+    display: block;
+    color: #d1d1d1;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 9px;
 }
 
-.stepIndicatorHeadingImage {
-    border-radius: 50%;
-    overflow: hidden;
-    object-fit: cover;
+.inputWrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
 }
+
+.inputIcon {
+    position: absolute;
+    left: 15px;
+    color: #777777;
+    font-size: 14px;
+    pointer-events: none;
+}
+
+.inputWrapper input {
+    width: 100%;
+    padding: 13px 15px 13px 42px;
+    color: #ffffff;
+    background: #242424;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    outline: none;
+    font-size: 13px;
+    transition: 0.3s ease;
+}
+
+.inputWrapper input::placeholder {
+    color: #666666;
+}
+
+.inputWrapper input:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.inputWrapper input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.inputWrapper input.inputError {
+    border-color: #ef4444;
+}
+
+/* =================================
+   VALIDATION ERRORS
+================================= */
+
+.errorMessage {
+    color: #ef4444;
+    font-size: 11px;
+    margin-top: 7px;
+    padding-left: 8px;
+}
+
+.generalError {
+    padding: 12px;
+    margin-bottom: 15px;
+    color: #f87171;
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 8px;
+    font-size: 12px;
+}
+
+/* =================================
+   SHOW PASSWORD
+================================= */
 
 .showPasswordContainer {
     margin-top: 8px;
     margin-bottom: 8px;
+    padding: 8px;
 }
 
+.showPasswordContainer label {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    color: #999999;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.showPasswordContainer input {
+    accent-color: #3b82f6;
+    cursor: pointer;
+}
+
+/* =================================
+   PROFILE PICTURE
+================================= */
+
 .profilePictureContainer {
+    display: flex;
+    align-items: center;
+    gap: 20px;
     padding-bottom: 8px;
+    margin: 15px 8px 20px;
+}
+
+.profilePreview {
+    width: 100px;
+    height: 100px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: #242424;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 50%;
 }
 
 .userIcon {
     width: 100px;
     height: 100px;
+    color: #777777;
+    object-fit: cover;
 }
+
+.uploadContent {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.uploadButton {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    color: #60a5fa !important;
+    background: rgba(59, 130, 246, 0.12);
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    border-radius: 8px;
+    font-size: 12px !important;
+    font-weight: 500;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.uploadButton:hover {
+    background: rgba(59, 130, 246, 0.22);
+}
+
+.uploadContent p {
+    color: #777777;
+    font-size: 11px;
+}
+
+.selectedFile {
+    color: #60a5fa;
+    font-size: 11px;
+    overflow-wrap: anywhere;
+    padding: 0 8px;
+}
+
+/* =================================
+   CONTINUE BUTTON
+================================= */
+
+.continueButton {
+    width: 100%;
+    min-height: 44px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    margin-top: 20px;
+    margin-bottom: 4px;
+    color: #ffffff;
+    background: linear-gradient(to right, #2563eb, #3b82f6);
+    border: none;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.continueButton:hover:not(:disabled) {
+    background: linear-gradient(to right, #3b82f6, #60a5fa);
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.2);
+}
+
+.continueButton:active:not(:disabled) {
+    transform: scale(0.98);
+}
+
+.continueButton:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+/* =================================
+   FOOTER
+================================= */
 
 .footer {
     padding: 8px;
+    margin-top: 25px;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    text-align: center;
+}
+
+.footer > p {
+    color: #999999;
+    font-size: 12px;
+    margin-bottom: 15px;
+}
+
+.footer a {
+    color: #60a5fa;
+    text-decoration: none;
+    margin-left: 4px;
+    transition: 0.2s ease;
+}
+
+.footer a:hover {
+    color: #93c5fd;
+}
+
+.termsText {
+    color: #777777;
+    font-size: 10px;
+    line-height: 1.8;
+}
+
+/* =================================
+   RESPONSIVE DESIGN
+================================= */
+
+@media (max-width: 480px) {
+    .registerPage {
+        padding: 20px 12px;
+    }
+
+    .registerCard {
+        padding: 22px 15px;
+        border-radius: 14px;
+    }
+
+    .stepIndicatorDiv {
+        padding: 8px;
+    }
+
+    .stepIndicatorHeading {
+        font-size: 19px;
+    }
+
+    .header h1 {
+        font-size: 24px;
+    }
+
+    .profilePictureContainer {
+        gap: 14px;
+    }
+
+    .profilePreview {
+        width: 85px;
+        height: 85px;
+    }
+
+    .userIcon {
+        width: 85px;
+        height: 85px;
+    }
 }
