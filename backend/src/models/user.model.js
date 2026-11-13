@@ -11,11 +11,6 @@ const userSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
-    // phoneNumber: {
-    //     type: String,
-    //     required: true,
-    //     unique: true
-    // },
     password: {
         type: String
         // required: true //never use because we are using google auth for login and signup

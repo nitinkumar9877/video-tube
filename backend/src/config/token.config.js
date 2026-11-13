@@ -3,22 +3,15 @@ const configData = require("./environment.config.js");
 
 const generateToken = (payload) => {
     try {
-        const token = jwt.sign(payload, configData.JWT_SECRET, { expiresIn: '1h' });
-        console.log("Generated token:", token);
-        return token;
+        const accessToken = jwt.sign(payload, configData.JWT_ACCESS_SECRET, { expiresIn: '5m' });
+        console.log("Generated token:", accessToken);        
+        const refreshToken = jwt.sign(payload, configData.JWT_REFRESH_SECRET, { expiresIn: '7d' });
+        console.log("Generated refresh token:", refreshToken);
+        return { accessToken, refreshToken };
     } catch (error) {
         console.error("Error generating token:", error);
         return null;
     }
 };
 
-const verifyToken = (token) => {
-    try {
-        return jwt.verify(token, configData.JWT_SECRET);
-    } catch (error) {
-        console.error("Error verifying token:", error);
-        return null;
-    }
-};
-
-module.exports = { generateToken, verifyToken };
+module.exports = { generateToken };
