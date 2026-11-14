@@ -1,59 +1,107 @@
 const configData = require("../config/environment.config");
-const { clearAccessTokenCookie, clearrefreshTokenCookie } = require("../utils/cookies.utils");
+const { clearaccessTokenCookie, clearrefreshTokenCookie } = require("../utils/cookies.utils");
+const jwt = require("jsonwebtoken");
+const userModel = require("../models/user.model.js");
+const { printCatchBlockError } = require("../utils/errorPrint.utils.js");
 
 const accessTokenValidation = async (req, res, next) => {
-    const accessToken = req.cookies?.ACCESS_TOKEN_SECRET;
-    if (!accessToken) {
-        return res.status(401).json({
-            status: false,
-            message: "Unauthorized: No access token provided"
-        });
-    }
     try {
-        const decoded = jwt.verify(accessToken, configData.ACCESS_TOKEN_SECRET);
-        req.user = decoded; // Attach the decoded user information to the request object
+        // 1. Get access token from cookies
+        console.log("----------------------Access Token Middleware start here----------------------");
+        const accessToken = req.cookies?.accessToken;
+        console.log("1");
+        if (!accessToken) {
+            return res.status(401).json({
+                success: false,
+                message: "Access token is missing."
+            });
+        }
+        console.log("2");
+
+        // 2. Verify JWT signature and expiration
+        let decoded;
+
+        try {
+            decoded = jwt.verify(
+                accessToken,
+                configData.JWT_ACCESS_SECRET
+            );
+        } catch (error) {
+            printCatchBlockError(error);
+            clearaccessTokenCookie(res);
+
+            if (
+                error.name === "TokenExpiredError" ||
+                error.name === "JsonWebTokenError" ||
+                error.name === "NotBeforeError"
+            ) {
+                return res.status(401).json({
+                    success: false,
+                    message: "Access token is invalid or expired."
+                });
+            }
+
+            throw error;
+        }
+        console.log("3");
+
+        // 3. Extract user ID
         const userId = decoded.userId;
+
+        if (!userId) {
+            clearAccessTokenCookie(res);
+
+            return res.status(401).json({
+                success: false,
+                message: "Invalid access token payload."
+            });
+        }
+        console.log("4");
+
+        // 4. Find user in MongoDB
         const user = await userModel.findById(userId);
+
         if (!user) {
             clearAccessTokenCookie(res);
             clearrefreshTokenCookie(res);
-            return res.status(401).json({
-                status: false,
-                message: "Unauthorized: User not found"
-            });
-        }
-        req.user = user; // Attach the user object to the request for further use
-        next(); // Proceed to the next middleware or route handler
-    } catch (error) {
-        clearAccessTokenCookie(res);
-        clearrefreshTokenCookie(res);
-        if (
-            error.name === 'TokenExpiredError' ||
-            error.name === 'JsonWebTokenError' ||
-            error.name === 'NotBeforeError'
-        ) {
+
             return res.status(401).json({
                 success: false,
-                message: 'Access token expired or invalid'
+                message: "User not found."
             });
         }
+        console.log("User found:", user);
+        console.log("5");
 
-        console.error(error);
+        // 5. Attach user to request
+        req.user = user;
+        console.log("6");
+        console.log("----------------------Access Token Middleware end here----------------------");
+
+        // 6. Continue to controller
+        return next();
+
+    } catch (error) {
+        printCatchBlockError(error);
         return res.status(500).json({
             success: false,
-            message: 'Authentication failed'
+            message: "Internal server error."
         });
     }
 };
+
+module.exports = accessTokenValidation;
+
 
 const refreshTokenValidation = async (req, res, next) => {
     const refreshToken = req.cookies?.refreshToken;
     if (!refreshToken) {
         return res.status(401).json({
+            status: false,
             message: "Refresh token is missing."
         });
     }
-
+    console.log("1st");
     let decodedrefreshToken;
     try {
         decodedrefreshToken = jwt.verify(
@@ -62,31 +110,41 @@ const refreshTokenValidation = async (req, res, next) => {
         );
 
     } catch (error) {
-        console.log("4th catch 1st");
+        console.log("inside catch 1st");
 
-        return res.clearCookie("refreshToken", {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
-            path: "/"
+        clearaccessTokenCookie(res);
+        clearrefreshTokenCookie(res);
+        printCatchBlockError(error);
+
+        return res.status(401).json({
+            success: false,
+            message: "Refresh token is invalid or expired."
         });
-
     }
+    console.log("2nd");
     let user;
     try {
-        user = await userModel.findById(decodedrefreshToken.id);
+        console.log("decodedrefreshToken.id:", decodedrefreshToken.userId);
+        user = await userModel.findById(decodedrefreshToken.userId);
+        // console.log("User found:", user);
         if (!user) {
             return res.status(401).json({
+                success: false,
                 message: "User not found."
             });
         }
     } catch (error) {
-        console.error("Error fetching user:", error);
+        printCatchBlockError(error);
+        clearrefreshTokenCookie(res);
         return res.status(401).json({
+            success: false,
             message: "Refresh token is invalid or expired."
         });
     }
+    console.log("3rd");
     req.user = user; // Attach the user object to the request for further use
+    console.log("4th");
+    console.log("----------------------Auth Middleware end here----------------------");
     next(); // Proceed to the next middleware or route handler
 };
 

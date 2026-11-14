@@ -32,6 +32,10 @@ if (!process.env.IMAGEKIT_PRIVATE_KEY) {
 if (!process.env.NODE_ENV) {
     throw new Error("NODE_ENV is not defined in the environment variables");
 }
+
+if (!process.env.CLOUDFLARE_API_KEY) {
+    throw new Error("CLOUDFLARE_API_KEY is not defined in the environment variables");
+}
 const configData = {
     PORT: process.env.PORT,
     MONGODBURL: process.env.MONGODBURL,
@@ -43,6 +47,7 @@ const configData = {
     IMAGEKIT_URL_ENDPOINT_URL: process.env.IMAGEKIT_URL_ENDPOINT_URL,
     IMAGEKIT_PUBLIC_KEY: process.env.IMAGEKIT_PUBLIC_KEY,
     IMAGEKIT_PRIVATE_KEY: process.env.IMAGEKIT_PRIVATE_KEY,
-    NODE_ENV: process.env.NODE_ENV
+    NODE_ENV: process.env.NODE_ENV,
+    CLOUDFLARE_API_KEY: process.env.CLOUDFLARE_API_KEY
 }
 module.exports = configData;

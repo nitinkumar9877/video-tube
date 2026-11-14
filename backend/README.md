@@ -6,3 +6,7 @@ npm install nodemailer
 npm install fluent-ffmpeg
 npm install hls.js
 npm install --save-dev nodemon
+
+
+curl -X GET "https://api.cloudflare.com/client/v4/user/tokens/verify" \
+  -H "Authorization: Bearer CLOUDFARE_API_KEY"

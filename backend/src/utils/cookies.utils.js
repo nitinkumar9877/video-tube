@@ -10,7 +10,7 @@ const setrefreshTokenCookie = (res, refreshToken) => {
     res.cookie("refreshToken", refreshToken, cookieOptions);
 };
 
-const setAccessTokenCookie = (res, accessToken) => {
+const setaccessTokenCookie = (res, accessToken) => {
     const cookieOptions = {
         httpOnly: true,
         secure: configData.NODE_ENV === "production", // Set to true in production
@@ -20,7 +20,7 @@ const setAccessTokenCookie = (res, accessToken) => {
 
     res.cookie("accessToken", accessToken, cookieOptions);
 };
-const clearAccessTokenCookie = (res) => {
+const clearaccessTokenCookie = (res) => {
     res.clearCookie("accessToken", {
         httpOnly: true,
         secure: configData.NODE_ENV === "production",
@@ -37,7 +37,7 @@ const clearrefreshTokenCookie = (res) => {
 
 module.exports = {
     setrefreshTokenCookie,
-    setAccessTokenCookie,
-    clearAccessTokenCookie,
+    setaccessTokenCookie,
+    clearaccessTokenCookie,
     clearrefreshTokenCookie
 };

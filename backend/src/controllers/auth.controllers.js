@@ -1,13 +1,13 @@
 const userModel = require("../models/user.model");
 const imagekit = require("../config/imagekit.config.js");
-const { generateAccessToken, generaterefreshToken } = require("../config/token.config.js");
+const { generateToken } = require("../config/token.config.js");
 const validator = require("validator");
 const bcrypt = require("bcryptjs");
 const TokenModel = require("../models/Token.model.js");
-const { setAccessTokenCookie, setrefreshTokenCookie } = require("../utils/cookies.utils.js");
-const { generateToken } = require("../config/token.config.js")
+const { setaccessTokenCookie, setrefreshTokenCookie } = require("../utils/cookies.utils.js");
 const mongoose = require("mongoose");
 const { sha256hashConverter } = require("../utils/hash.utils.js");
+const { clearaccessTokenCookie, clearrefreshTokenCookie } = require("../utils/cookies.utils.js");
 
 
 const signUp = async (req, res) => {
@@ -111,7 +111,7 @@ const signUp = async (req, res) => {
             maxAge: 7 * 24 * 60 * 60 * 1000
         });
 
-        res.cookie("AccessToken", accessToken, {
+        res.cookie("accessToken", accessToken, {
             httpOnly: true,
             secure: false, // Set to true in production
             sameSite: "lax",
@@ -191,17 +191,13 @@ const login = async (req, res) => {
             userId: user._id
         });
         console.log("8");
-
-        // Hash refresh token
-        const refreshTokenHash = sha256hashConverter(refreshToken);
-        const accessTokenHash = sha256hashConverter(accessToken);
         console.log("9");
 
         // Create session in MongoDB
         await TokenModel.create({
             _id: sessionId,
             userId: user._id,
-            refreshTokenHash: refreshTokenHash,
+            refreshToken: refreshToken,
             expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
             userAgent: req.get("user-agent") || null,
             ipAddress: req.ip
@@ -209,18 +205,18 @@ const login = async (req, res) => {
         console.log("10");
 
         // Store access token in HttpOnly cookie
-        setAccessTokenCookie(res, accessTokenHash);
+        setaccessTokenCookie(res, accessToken);
 
         console.log("11");
         // Store refresh token in HttpOnly cookie
-        setrefreshTokenCookie(res, refreshTokenHash);
+        setrefreshTokenCookie(res, refreshToken);
         console.log("12");
 
         return res.status(200).json({
             success: true,
             message: "Login successful",
             data: {
-                accessTokenHash: accessTokenHash,
+                accessToken: accessToken,
                 user: {
                     _id: user._id,
                     username: user.username,
@@ -242,7 +238,8 @@ const login = async (req, res) => {
 
 const logout = (req, res) => {
     try {
-        res.clearCookie("token");
+        clearaccessTokenCookie(res);
+        clearrefreshTokenCookie(res);
         res.status(200).json({ message: "Logout successful" });
     } catch (error) {
         console.error("Error during logout:", error);
@@ -252,18 +249,37 @@ const logout = (req, res) => {
 
 const refreshToken = async (req, res) => {
     try {
+        console.log("----------------------Refresh Token controller start here----------------------");
         const user = req.user; // Assuming user is attached to req in middleware
-        const newAccessToken = generateAccessToken({ id: user._id });
-        const newRefreshToken = generaterefreshToken({ id: user._id });
-        setrefreshTokenCookie(res, newRefreshToken);
-        setAccessTokenCookie(res, newAccessToken);
+        console.log("User from middleware:", user);
+        const { accessToken, refreshToken } = generateToken({ userId: user._id });
+        console.log("New tokens generated successfully");
+        console.log("New Access Token:", accessToken);
+        console.log("New Refresh Token:", refreshToken);
+        console.log("1");
+        setrefreshTokenCookie(res, refreshToken);
+        console.log("2");
+        setaccessTokenCookie(res, accessToken);
+        console.log("3");
+        // Generate a unique session ID
+        const sessionId = new mongoose.Types.ObjectId();
+        await TokenModel.create({
+            _id: sessionId,
+            userId: user._id,
+            refreshToken: refreshToken,
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+            userAgent: req.get("user-agent") || null,
+            ipAddress: req.ip
+        });
+        console.log("------------------------successfully refreshed the access token and refresh token------------------------");
         res.status(200).json({
             status: true,
             message: "Access token refreshed",
-            accessToken: newAccessToken
+            accessToken: accessToken
         });
     }
     catch (error) {
+        console.log("----------------------Refresh Token controller catch block start here----------------------");
         console.error("Error during token refresh:", error);
         res.status(500).json({
             status: false,

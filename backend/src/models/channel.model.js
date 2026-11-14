@@ -24,6 +24,13 @@ const channelSchema = new mongoose.Schema(
             default: "",
             maxlength: 1000
         },
+        category:{
+            type: String,
+            required: true,
+            trim: true,
+            minlength: 3,
+            maxlength: 100
+        },
 
         channelLogo: {
             type: String,
