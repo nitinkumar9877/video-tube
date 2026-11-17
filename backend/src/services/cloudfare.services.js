@@ -1,6 +1,6 @@
 const Formdata = require("form-data");
 const axios = require("axios");
-const configData = require("../config/multer.config.js");
+const configData = require("../config/environment.config.js");
 const { printCatchBlockError } = require("../utils/errorPrint.utils.js");
 
 const uploadToCloudflare = async (file) => {
@@ -10,35 +10,36 @@ const uploadToCloudflare = async (file) => {
             filename: file.originalname,
             contentType: file.mimetype
         });
-
+        console.log("------------uploadToCloudflare service called------------");
+        console.log("Request file:", file);
+        console.log("FormData:", formData);
+        console.log("configData.CLOUDFLARE_ACCOUNT_ID",configData.CLOUDFLARE_ACCOUNT_ID);
+        console.log("configData.CLOUDFLARE_API_TOKEN",configData.CLOUDFLARE_API_TOKEN);
+        
+        console.log("----------------------------------------------------------------------------------");
         const response = await axios.post(
             `https://api.cloudflare.com/client/v4/accounts/${configData.CLOUDFLARE_ACCOUNT_ID}/stream`,
             formData,
             {
                 headers: {
-                    Authorization: `Bearer ${configData.CLOUDFLARE_API_TOKEN}`,
                     ...formData.getHeaders(),
-                },
-                maxBodyLength: Infinity,
+                    Authorization: `Bearer ${configData.CLOUDFLARE_API_TOKEN}`
+                }
             }
         );
-
-        const video = response.data.result;
-
-        return {
-            videoId: video.uid,
-            videoUrl: `https://iframe.videodelivery.net/${video.uid}`,
-            thumbnailUrl: `https://videodelivery.net/${video.uid}/thumbnails/thumbnail.jpg`,
-        };
+        console.log("API hit to cloudflare");
+        if (response.data && response.data.success) {
+            console.log("Successfully.....!!!");
+            return response.data.result;
+        } else {
+            console.log("Failed.....!!! ");
+            throw new Error("Failed to upload video to Cloudflare");
+        }
     } catch (error) {
+        console.log("------------------ uploadToCloudflare error catch block ------------------");
         printCatchBlockError(error);
-        console.error(
-            "Cloudflare upload error:",
-            error.response?.data || error.message
-        );
-
-        throw new Error("Video upload failed");
-    }
+        throw error;
+    }   
 };
 
 

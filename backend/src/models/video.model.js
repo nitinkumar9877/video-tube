@@ -18,11 +18,20 @@ const videoSchema = new mongoose.Schema({
         required: true
     },
 
+    videoKey: {
+        type: String,
+        required: true
+    },
+
     thumbnailUrl: {
         type: String,
         required: true
     },
 
+    thumbnailKey: {
+        type: String,
+        required: true
+    },
     category: {
         type: String,
         required: true,
