@@ -234,6 +234,7 @@ const getVideo = async (req, res) => {
 
 const deleteObjectS3 = async (key) => {
     try {
+        console.log(`Deleting object from S3 with key: ${key}`);
     } catch (error) {
         printCatchBlockError(error);
         throw error; // Rethrow the error to be handled by the caller
