@@ -1,6 +1,6 @@
 "use client";
 
-import React, { use, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -12,29 +12,7 @@ import logo from "../../../assets/playTube.webp";
 import { AuthLoginUser } from "@/services/AuthUser";
 
 const LoginPage = () => {
-    useEffect(() => {
-        // Check if the user is already logged in
-        const checkLoginStatus = async () => {
-            try {
-                const response = await fetch(
-                    `${process.env.NEXT_PUBLIC_API_URL}${process.env.NEXT_PUBLIC_AUTH_API_PATH}check-login`,
-                    {
-                        method: "GET",
-                        credentials: "include", // Include cookies in the request
-                    }
-                );
-
-                if (response.ok) {
-                    // User is logged in, redirect to the home page
-                    router.push("/user");
-                }
-            } catch (error) {
-                console.error("Error checking login status:", error);
-            }
-        };
-
-        checkLoginStatus();
-    });
+   
     const router = useRouter();
     const [formData, setFormData] = useState({
         email: "",
@@ -99,6 +77,14 @@ const LoginPage = () => {
             });
 
             console.log("Login successful:", response);
+            const loggedInUser =
+                response.data?.user || response.user || null;
+            if (loggedInUser) {
+                localStorage.setItem(
+                    "playtube_user",
+                    JSON.stringify(loggedInUser)
+                );
+            }
             router.push("/user"); // Redirect to the home page after successful login
             // Add your redirect logic here.
             // Example: router.push("/");
@@ -277,7 +263,7 @@ const LoginPage = () => {
                 <div className={styles.registerSection}>
 
                     <p>
-                        Don't have an account?
+                        Don&apos;t have an account?
                         <Link href="/register-account">
                             Create Account
                         </Link>

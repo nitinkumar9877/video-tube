@@ -19,10 +19,10 @@ const uploadAvatar = (req, res, next) => {
     });
 };
 
-const uploadThumbnail = (req, res, next) => {
+const uploadImage = (req, res, next) => {
     try {
-        console.log("------------uploadThumbnail middleware called------------");
-        uploadImgMulter.single("thumbnailImage")(req, res, (error) => {
+        console.log("------------uploadImage middleware called------------");
+        uploadImgMulter.single("Image")(req, res, (error) => {
             if (!error) {
                 return next();
             }
@@ -34,7 +34,7 @@ const uploadThumbnail = (req, res, next) => {
                     message: error.message
                 });
             }
-            console.log("------------uploadThumbnail middleware error------------");
+            console.log("------------uploadImage middleware error------------");
             return next(error);
         });
 
@@ -43,7 +43,7 @@ const uploadThumbnail = (req, res, next) => {
         return res.status(500).json({
             success: false,
             block: 'middleware',
-            message: "An unexpected error occurred in the uploadThumbnail middleware"
+            message: "An unexpected error occurred in the uploadImage middleware"
         });
     }
 };
@@ -128,4 +128,4 @@ const uploadVideoAndThumbnail = (req, res, next) => {
     }
 };
 
-module.exports = { uploadVideo, uploadAvatar, uploadThumbnail, uploadVideoAndThumbnail };
+module.exports = { uploadVideo, uploadAvatar, uploadImage, uploadVideoAndThumbnail };

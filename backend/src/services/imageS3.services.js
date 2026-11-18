@@ -86,4 +86,41 @@ const deleteThumbnailObjectS3 = async (key) => {
     }
 };
 
-module.exports = { putThumbnailObjectS3, getThumbnailObjectS3, deleteThumbnailObjectS3 };
+const putProfileImageObjectS3 = async (file, fileName) => {
+    try {
+        const params = {
+            Bucket: configData.AWS_BUCKET_NAME,
+
+            // Upload inside profile-images folder
+            Key: `profile-images/${fileName}`,
+            // Actual file data
+            Body: file.buffer,
+
+            // File MIME type
+            ContentType: file.mimetype,
+        };
+
+        const command = new PutObjectCommand(params);
+
+        const response = await s3Credentials.send(command);
+
+        if (response.$metadata.httpStatusCode !== 200) {
+            throw new Error("Failed to upload profile image to S3");
+        }
+
+        const fileUrl = `https://${configData.AWS_BUCKET_NAME}.s3.${configData.AWS_REGION}.amazonaws.com/${params.Key}`;
+
+        console.log("Profile image uploaded successfully to S3:", fileUrl);
+
+        return {
+            profileImageKey: params.Key,
+            profileImageUrl: fileUrl
+        };
+
+    } catch (error) {
+        printCatchBlockError(error);
+        throw error;
+    }
+};
+
+module.exports = { putThumbnailObjectS3, getThumbnailObjectS3, deleteThumbnailObjectS3, putProfileImageObjectS3 };

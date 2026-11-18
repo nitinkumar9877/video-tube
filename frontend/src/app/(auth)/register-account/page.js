@@ -1,19 +1,14 @@
-
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
 import {
     FaArrowLeft,
-    FaUserCircle,
     FaUser,
     FaEnvelope,
     FaLock,
-    FaEye,
-    FaEyeSlash,
-    FaImage,
 } from "react-icons/fa";
 
 import { ClipLoader } from "react-spinners";
@@ -22,33 +17,144 @@ import styles from "../../../components/styleSheets/register.module.css";
 import logo from "../../../assets/playTube.webp";
 import { AuthRegisterUser } from "@/services/AuthUser";
 
+// Initial form state
+const INITIAL_FORM_DATA = {
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+};
+
+// Validate username and email
+const validateBasicInfo = ({ username, email }) => {
+    const errors = {};
+
+    const cleanUsername = username.trim();
+    const cleanEmail = email.trim();
+
+    if (!cleanUsername) {
+        errors.username = "Username is required";
+    } else if (cleanUsername.length < 3) {
+        errors.username = "Username must be at least 3 characters";
+    } else if (cleanUsername.length > 20) {
+        errors.username = "Username cannot exceed 20 characters";
+    } else if (!/^[a-zA-Z0-9_]+$/.test(cleanUsername)) {
+        errors.username =
+            "Only letters, numbers and underscores are allowed";
+    }
+
+    if (!cleanEmail) {
+        errors.email = "Email address is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+        errors.email = "Please enter a valid email address";
+    }
+
+    return errors;
+};
+
+// Validate password
+const validatePassword = ({ password, confirmPassword }) => {
+    const errors = {};
+
+    if (!password) {
+        errors.password = "Password is required";
+    } else if (password.length < 8) {
+        errors.password = "Password must be at least 8 characters";
+    } else if (
+        !/[A-Z]/.test(password) ||
+        !/[a-z]/.test(password) ||
+        !/[0-9]/.test(password) ||
+        !/[^A-Za-z0-9]/.test(password)
+    ) {
+        errors.password =
+            "Include uppercase, lowercase, number and symbol";
+    }
+
+    if (!confirmPassword) {
+        errors.confirmPassword = "Please confirm your password";
+    } else if (password !== confirmPassword) {
+        errors.confirmPassword = "Passwords do not match";
+    }
+
+    return errors;
+};
+
+// Identify duplicate registration errors
+const getRegistrationError = (error) => {
+    const data = error?.response?.data || error?.data || {};
+
+    const message =
+        data.message ||
+        data.error?.message ||
+        data.error ||
+        error.message ||
+        "Unable to create your account. Please try again.";
+
+    const status = error?.response?.status;
+
+    const keyPattern = data.keyPattern || data.error?.keyPattern || {};
+    const keyValue = data.keyValue || data.error?.keyValue || {};
+
+    const combinedMessage =
+        typeof message === "string"
+            ? message
+            : JSON.stringify(message);
+
+    const isDuplicate =
+        status === 409 ||
+        data.code === 11000 ||
+        data.error?.code === 11000 ||
+        /already exists|already registered|duplicate key|e11000/i.test(
+            combinedMessage
+        );
+
+    if (!isDuplicate) {
+        return {
+            general: combinedMessage,
+            fieldErrors: {},
+        };
+    }
+
+    // Determine which field already exists
+    const duplicateText = [
+        combinedMessage,
+        JSON.stringify(keyPattern),
+        JSON.stringify(keyValue),
+    ].join(" ").toLowerCase();
+
+    const fieldErrors = {};
+
+    if (duplicateText.includes("email")) {
+        fieldErrors.email = "This email address is already registered.";
+    }
+
+    if (duplicateText.includes("username")) {
+        fieldErrors.username = "This username is already taken.";
+    }
+
+    return {
+        general:
+            Object.keys(fieldErrors).length > 0
+                ? "Please use different registration details."
+                : "An account with these details already exists.",
+        fieldErrors,
+    };
+};
+
 const RegisterNewUser = () => {
     const [step, setStep] = useState(1);
 
-    const [formData, setFormData] = useState({
-        username: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-    });
+    const [formData, setFormData] = useState(INITIAL_FORM_DATA);
 
-    const [backendImage, setBackendImage] = useState(null);
-    const [frontendImage, setFrontendImage] = useState(null);
-
-    const [isLoading, setIsLoading] = useState(false);
-    const [showPassword, setShowPassword] = useState(false);
     const [errors, setErrors] = useState({});
 
-    // Clean up preview URL
-    useEffect(() => {
-        return () => {
-            if (frontendImage) {
-                URL.revokeObjectURL(frontendImage);
-            }
-        };
-    }, [frontendImage]);
+    const [isLoading, setIsLoading] = useState(false);
 
-    // Handle text inputs
+    const [showPassword, setShowPassword] = useState(false);
+
+    const [successMessage, setSuccessMessage] = useState("");
+
+    // Handle input changes
     const handleInputChange = (e) => {
         const { name, value } = e.target;
 
@@ -62,172 +168,127 @@ const RegisterNewUser = () => {
             [name]: "",
             general: "",
         }));
+
+        setSuccessMessage("");
     };
 
     // Step 1 validation
-    const validateStepOne = () => {
-        const newErrors = {};
-
-        const username = formData.username.trim();
-        const email = formData.email.trim();
-
-        if (!username) {
-            newErrors.username = "Username is required";
-        } else if (username.length < 3) {
-            newErrors.username = "Username must be at least 3 characters";
-        } else if (username.length > 20) {
-            newErrors.username = "Username cannot exceed 20 characters";
-        } else if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-            newErrors.username =
-                "Only letters, numbers and underscores are allowed";
-        }
-
-        if (!email) {
-            newErrors.email = "Email address is required";
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            newErrors.email = "Please enter a valid email address";
-        }
-
-        setErrors(newErrors);
-
-        return Object.keys(newErrors).length === 0;
-    };
-
-    // Step 2 validation
-    const validateStepTwo = () => {
-        const newErrors = {};
-
-        const { password, confirmPassword } = formData;
-
-        if (!password) {
-            newErrors.password = "Password is required";
-        } else if (password.length < 8) {
-            newErrors.password =
-                "Password must be at least 8 characters";
-        } else if (
-            !/[A-Z]/.test(password) ||
-            !/[a-z]/.test(password) ||
-            !/[0-9]/.test(password) ||
-            !/[^A-Za-z0-9]/.test(password)
-        ) {
-            newErrors.password =
-                "Include uppercase, lowercase, number and symbol";
-        }
-
-        if (!confirmPassword) {
-            newErrors.confirmPassword =
-                "Please confirm your password";
-        } else if (password !== confirmPassword) {
-            newErrors.confirmPassword = "Passwords do not match";
-        }
-
-        setErrors(newErrors);
-
-        return Object.keys(newErrors).length === 0;
-    };
-
-    // Navigate between steps
     const handleContinue = () => {
-        if (step === 1 && validateStepOne()) {
+        const validationErrors = validateBasicInfo(formData);
+
+        setErrors(validationErrors);
+
+        if (Object.keys(validationErrors).length === 0) {
             setStep(2);
-        } else if (step === 2 && validateStepTwo()) {
-            setStep(3);
         }
     };
 
+    // Back button
     const handleBack = () => {
+        if (isLoading) return;
+
         setErrors({});
-        setStep((prev) => Math.max(1, prev - 1));
+        setStep(1);
     };
 
-    // Handle profile picture
-    const handleImageChange = (e) => {
-        const file = e.target.files?.[0];
-
-        if (!file) return;
-
-        const allowedTypes = [
-            "image/jpeg",
-            "image/png",
-            "image/webp",
-        ];
-
-        if (!allowedTypes.includes(file.type)) {
-            setErrors({
-                profilePicture:
-                    "Only JPG, PNG and WEBP images are allowed",
-            });
-            e.target.value = "";
-            return;
-        }
-
-        if (file.size > 5 * 1024 * 1024) {
-            setErrors({
-                profilePicture:
-                    "Image size must be less than 5 MB",
-            });
-            e.target.value = "";
-            return;
-        }
-
-        setBackendImage(file);
-        setFrontendImage(URL.createObjectURL(file));
-
-        setErrors((prev) => ({
-            ...prev,
-            profilePicture: "",
-            general: "",
-        }));
-    };
-
-    // Final registration
+    // Register account
     const handleCreateAccount = async (e) => {
         e.preventDefault();
 
         if (isLoading) return;
 
-        if (!backendImage) {
-            setErrors({
-                profilePicture: "Please upload a profile picture",
-            });
+        // Validate basic information
+        const basicErrors = validateBasicInfo(formData);
+
+        if (Object.keys(basicErrors).length > 0) {
+            setErrors(basicErrors);
+            setStep(1);
+            return;
+        }
+
+        // Validate password
+        const passwordErrors = validatePassword(formData);
+
+        if (Object.keys(passwordErrors).length > 0) {
+            setErrors(passwordErrors);
             return;
         }
 
         try {
             setIsLoading(true);
             setErrors({});
+            setSuccessMessage("");
 
-            const data = new FormData();
+            // API payload
+            const payload = {
+                username: formData.username.trim(),
+                email: formData.email.trim(),
+                password: formData.password,
+            };
 
-            data.append("username", formData.username.trim());
-            data.append("email", formData.email.trim());
-            data.append("password", formData.password);
-            data.append("avatar", backendImage);
+            const response = await AuthRegisterUser(payload);
 
-            const response = await AuthRegisterUser(data);
+            // Handle APIs that return success: false
+            const responseData = response?.data ?? response;
 
-            console.log("Registration successful:", response);
-            setIsLoading(false);
+            if (responseData?.success === false) {
+                const apiError = new Error(
+                    responseData.message || "Registration failed"
+                );
 
-            alert("Account created successfully!");
+                apiError.response = {
+                    status: response?.status,
+                    data: responseData,
+                };
 
-        } catch (error) {
-            setIsLoading(false);
+                throw apiError;
+            }
 
-            console.error(
-                "Registration failed:",
-                error.response?.data || error.message
+            console.log("Registration successful:", responseData);
+
+            setSuccessMessage(
+                "Account created successfully! You can now sign in."
             );
 
+            setFormData(INITIAL_FORM_DATA);
+            setStep(1);
+            setShowPassword(false);
+
+        } catch (error) {
+            console.error(
+                "Registration error:",
+                error?.response?.data || error
+            );
+
+            const registrationError = getRegistrationError(error);
+
             setErrors({
-                general:
-                    error.response?.data?.message ||
-                    "Unable to create your account. Please try again.",
+                general: registrationError.general,
+                ...registrationError.fieldErrors,
             });
+
+            // Move to basic information if username/email is duplicate
+            if (
+                registrationError.fieldErrors.email ||
+                registrationError.fieldErrors.username
+            ) {
+                setStep(1);
+            }
 
         } finally {
             setIsLoading(false);
         }
+    };
+
+    // Form submission
+    const handleSubmit = (e) => {
+        if (step === 1) {
+            e.preventDefault();
+            handleContinue();
+            return;
+        }
+
+        handleCreateAccount(e);
     };
 
     return (
@@ -244,19 +305,17 @@ const RegisterNewUser = () => {
                 <div className={styles.header}>
 
                     <div className={styles.headerTop}>
-
                         <button
                             type="button"
                             onClick={handleBack}
                             disabled={step === 1 || isLoading}
                             className={styles.backButton}
                             aria-label="Go back"
-                        >ady have an ac
+                        >
                             <FaArrowLeft />
                         </button>
 
                         <span>Create Account</span>
-
                     </div>
 
                     <div className={styles.logoContainer}>
@@ -265,6 +324,7 @@ const RegisterNewUser = () => {
                             alt="PlayTube Logo"
                             width={55}
                             height={55}
+                            priority
                             className={styles.logo}
                         />
                     </div>
@@ -279,8 +339,7 @@ const RegisterNewUser = () => {
 
                 {/* Step Indicator */}
                 <div className={styles.stepIndicator}>
-
-                    {[1, 2, 3].map((item) => (
+                    {[1, 2].map((item) => (
                         <div
                             key={item}
                             className={`${styles.stepBar} ${
@@ -288,42 +347,48 @@ const RegisterNewUser = () => {
                             }`}
                         />
                     ))}
-
                 </div>
 
                 <div className={styles.stepCount}>
-                    Step {step} of 3
+                    Step {step} of 2
                 </div>
 
                 {/* General Error */}
                 {errors.general && (
-                    <div className={styles.generalError}>
+                    <div
+                        className={styles.generalError}
+                        role="alert"
+                    >
                         {errors.general}
                     </div>
                 )}
 
-                <form onSubmit={handleCreateAccount}>
+                {/* Success Message */}
+                {successMessage && (
+                    <div role="status">
+                        {successMessage}
+                    </div>
+                )}
 
-                    {/* STEP 1: BASIC INFORMATION */}
+                <form onSubmit={handleSubmit} noValidate>
+
+                    {/* STEP 1 */}
                     {step === 1 && (
                         <section className={styles.stepIndicatorDiv}>
 
                             <div className={styles.stepHeading}>
-
                                 <h2 className={styles.stepIndicatorHeading}>
                                     <FaUser className={styles.headingIcon} />
                                     Basic Information
                                 </h2>
 
                                 <p className={styles.stepIndicatorDescription}>
-                                    Let's start with your basic information.
+                                    Let&apos;s start with your basic information.
                                 </p>
-
                             </div>
 
                             {/* Username */}
                             <div className={styles.inputFieldBox}>
-
                                 <label htmlFor="username">
                                     Username
                                 </label>
@@ -340,6 +405,9 @@ const RegisterNewUser = () => {
                                         placeholder="Enter your username"
                                         autoComplete="username"
                                         maxLength={20}
+                                        minLength={3}
+                                        required
+                                        aria-invalid={!!errors.username}
                                         className={
                                             errors.username
                                                 ? styles.inputError
@@ -353,12 +421,10 @@ const RegisterNewUser = () => {
                                         {errors.username}
                                     </p>
                                 )}
-
                             </div>
 
                             {/* Email */}
                             <div className={styles.inputFieldBox}>
-
                                 <label htmlFor="email">
                                     Email Address
                                 </label>
@@ -374,6 +440,8 @@ const RegisterNewUser = () => {
                                         onChange={handleInputChange}
                                         placeholder="Enter your email address"
                                         autoComplete="email"
+                                        required
+                                        aria-invalid={!!errors.email}
                                         className={
                                             errors.email
                                                 ? styles.inputError
@@ -387,12 +455,10 @@ const RegisterNewUser = () => {
                                         {errors.email}
                                     </p>
                                 )}
-
                             </div>
 
                             <button
-                                type="button"
-                                onClick={handleContinue}
+                                type="submit"
                                 className={styles.continueButton}
                             >
                                 Continue
@@ -401,12 +467,11 @@ const RegisterNewUser = () => {
                         </section>
                     )}
 
-                    {/* STEP 2: SECURITY INFORMATION */}
+                    {/* STEP 2 */}
                     {step === 2 && (
                         <section className={styles.stepIndicatorDiv}>
 
                             <div className={styles.stepHeading}>
-
                                 <h2 className={styles.stepIndicatorHeading}>
                                     <FaLock className={styles.headingIcon} />
                                     Security Information
@@ -415,12 +480,10 @@ const RegisterNewUser = () => {
                                 <p className={styles.stepIndicatorDescription}>
                                     Create a strong password for your account.
                                 </p>
-
                             </div>
 
                             {/* Password */}
                             <div className={styles.inputFieldBox}>
-
                                 <label htmlFor="password">
                                     Password
                                 </label>
@@ -436,6 +499,8 @@ const RegisterNewUser = () => {
                                         onChange={handleInputChange}
                                         placeholder="Create a password"
                                         autoComplete="new-password"
+                                        required
+                                        aria-invalid={!!errors.password}
                                         className={
                                             errors.password
                                                 ? styles.inputError
@@ -449,12 +514,10 @@ const RegisterNewUser = () => {
                                         {errors.password}
                                     </p>
                                 )}
-
                             </div>
 
                             {/* Confirm Password */}
                             <div className={styles.inputFieldBox}>
-
                                 <label htmlFor="confirmPassword">
                                     Confirm Password
                                 </label>
@@ -470,6 +533,8 @@ const RegisterNewUser = () => {
                                         onChange={handleInputChange}
                                         placeholder="Confirm your password"
                                         autoComplete="new-password"
+                                        required
+                                        aria-invalid={!!errors.confirmPassword}
                                         className={
                                             errors.confirmPassword
                                                 ? styles.inputError
@@ -483,12 +548,10 @@ const RegisterNewUser = () => {
                                         {errors.confirmPassword}
                                     </p>
                                 )}
-
                             </div>
 
                             {/* Show Password */}
                             <div className={styles.showPasswordContainer}>
-
                                 <label>
                                     <input
                                         type="checkbox"
@@ -500,98 +563,9 @@ const RegisterNewUser = () => {
 
                                     <span>Show Password</span>
                                 </label>
-
                             </div>
 
-                            <button
-                                type="button"
-                                onClick={handleContinue}
-                                className={styles.continueButton}
-                            >
-                                Continue
-                            </button>
-
-                        </section>
-                    )}
-
-                    {/* STEP 3: PROFILE PICTURE */}
-                    {step === 3 && (
-                        <section className={styles.stepIndicatorDiv}>
-
-                            <div className={styles.stepHeading}>
-
-                                <h2 className={styles.stepIndicatorHeading}>
-                                    <FaImage className={styles.headingIcon} />
-                                    Profile Picture
-                                </h2>
-
-                                <p className={styles.stepIndicatorDescription}>
-                                    Add a profile picture to personalize your account.
-                                </p>
-
-                            </div>
-
-                            <div className={styles.profilePictureContainer}>
-
-                                <div className={styles.profilePreview}>
-
-                                    {frontendImage ? (
-                                        <img
-                                            src={frontendImage}
-                                            alt="Profile preview"
-                                            className={styles.userIcon}
-                                        />
-                                    ) : (
-                                        <FaUserCircle
-                                            className={styles.userIcon}
-                                        />
-                                    )}
-
-                                </div>
-
-                                <div className={styles.uploadContent}>
-
-                                    <label
-                                        htmlFor="profilePicture"
-                                        className={styles.uploadButton}
-                                    >
-                                        <FaImage />
-                                        Choose Image
-                                    </label>
-
-                                    <input
-                                        id="profilePicture"
-                                        type="file"
-                                        name="profilePicture"
-                                        accept="image/jpeg,image/png,image/webp"
-                                        onChange={handleImageChange}
-                                        hidden
-                                    />
-
-                                    <p>
-                                        JPG, PNG or WEBP
-                                    </p>
-
-                                    <p>
-                                        Maximum file size: 5 MB
-                                    </p>
-
-                                </div>
-
-                            </div>
-
-                            {backendImage && (
-                                <p className={styles.selectedFile}>
-                                    {backendImage.name}
-                                </p>
-                            )}
-
-                            {errors.profilePicture && (
-                                <p className={styles.errorMessage}>
-                                    {errors.profilePicture}
-                                </p>
-                            )}
-
+                            {/* Submit */}
                             <button
                                 type="submit"
                                 disabled={isLoading}
@@ -619,7 +593,7 @@ const RegisterNewUser = () => {
                 <div className={styles.footer}>
 
                     <p>
-                        Already have an account?
+                        Already have an account?{" "}
                         <Link href="/login">
                             Sign In
                         </Link>
@@ -639,7 +613,6 @@ const RegisterNewUser = () => {
                 </div>
 
             </div>
-
         </main>
     );
 };

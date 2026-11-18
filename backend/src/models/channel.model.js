@@ -1,4 +1,3 @@
-
 const mongoose = require('mongoose');
 
 const channelSchema = new mongoose.Schema(
@@ -37,7 +36,7 @@ const channelSchema = new mongoose.Schema(
             default: ""
         },
 
-        channelBanner: {
+        channelLogoKey: {
             type: String,
             default: ""
         },

@@ -1,9 +1,19 @@
 const { createChannelService } = require('../services/channel.services.js');
+const channelModel = require('../models/channel.model.js');
 const { printCatchBlockError } = require('../utils/errorPrint.utils.js');
+const { putProfileImageObjectS3 } = require('../services/imageS3.services.js');
 const createChannel = async (req, res) => {
     try {
         console.log("---------------- Channel Controller ----------------");
-        const { channelName, description, category, channelHandle, channelLogo, channelBanner } = req.body;
+        if (!req.body) {
+            return res.status(400).json({ error: "Request body is missing" });
+        };
+        const { channelName, description, category, channelHandle} = req.body;
+        console.log("0");
+        const channelLogo = req.file;
+        if(!channelLogo ) {
+            return res.status(400).json({ error: "Channel logo are required" });
+        };
         console.log("1");
         const userId = req.user._id; // Assuming you have user authentication and the user ID is available in req.user
         if (!userId) {
@@ -15,13 +25,15 @@ const createChannel = async (req, res) => {
         }
         console.log("3");
 
+        const { profileImageKey, profileImageUrl } = await putProfileImageObjectS3(channelLogo, `channel-logos/${Date.now()}-${channelLogo.originalname}`);
+        
         const channelData = {
             channelName,
             description,
             category,
             channelHandle,
-            channelLogo: channelLogo || "",
-            channelBanner: channelBanner || ""
+            channelLogo: profileImageUrl || "",
+            channelLogoKey: profileImageKey || "",
         };
         console.log("4");
 
@@ -42,4 +54,33 @@ const createChannel = async (req, res) => {
     }
 };
 
-module.exports = { createChannel };
+const getMyChannel = async (req, res) => {
+    try {
+        const channelId = req.user.channel?.[0];
+
+        if (!channelId) {
+            return res.status(200).json({
+                success: true,
+                channel: null
+            });
+        }
+
+        const channel = await channelModel.findOne({
+            _id: channelId,
+            owner: req.user._id
+        });
+
+        return res.status(200).json({
+            success: true,
+            channel: channel || null
+        });
+    } catch (error) {
+        printCatchBlockError(error);
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+module.exports = { createChannel, getMyChannel };
