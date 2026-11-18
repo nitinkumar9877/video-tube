@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { use, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FaUserCircle, FaLock, FaEnvelope } from "react-icons/fa";
 import { ClipLoader } from "react-spinners";
 
@@ -11,6 +12,30 @@ import logo from "../../../assets/playTube.webp";
 import { AuthLoginUser } from "@/services/AuthUser";
 
 const LoginPage = () => {
+    useEffect(() => {
+        // Check if the user is already logged in
+        const checkLoginStatus = async () => {
+            try {
+                const response = await fetch(
+                    `${process.env.NEXT_PUBLIC_API_URL}${process.env.NEXT_PUBLIC_AUTH_API_PATH}check-login`,
+                    {
+                        method: "GET",
+                        credentials: "include", // Include cookies in the request
+                    }
+                );
+
+                if (response.ok) {
+                    // User is logged in, redirect to the home page
+                    router.push("/user");
+                }
+            } catch (error) {
+                console.error("Error checking login status:", error);
+            }
+        };
+
+        checkLoginStatus();
+    });
+    const router = useRouter();
     const [formData, setFormData] = useState({
         email: "",
         password: "",
@@ -74,7 +99,7 @@ const LoginPage = () => {
             });
 
             console.log("Login successful:", response);
-
+            router.push("/user"); // Redirect to the home page after successful login
             // Add your redirect logic here.
             // Example: router.push("/");
 

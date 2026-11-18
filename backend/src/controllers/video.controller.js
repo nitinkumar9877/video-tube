@@ -2,7 +2,7 @@
 const { printCatchBlockError } = require("../utils/errorPrint.utils.js");
 const { putVideoObjectS3 } = require("../services/videosS3.services.js");
 const { putThumbnailObjectS3 } = require("../services/imageS3.services.js");
-const { uploadVideoDataToMongoDB } = require("../services/mongoDB-video.services.js");
+const { uploadVideoDataToMongoDB, deleteVideoFromEverywhere, updateVideoDetailsInMongoDB, likeVideoInMongoDB } = require("../services/mongoDB-video.services.js");
 const VideoModel = require("../models/video.model.js");
 
 const videoUpload = async (req, res) => {
@@ -232,12 +232,201 @@ const getVideo = async (req, res) => {
     }
 };
 
-const deleteObjectS3 = async (key) => {
+const deleteVideo = async (req, res) => {
     try {
-        console.log(`Deleting object from S3 with key: ${key}`);
+        console.log("------------deleteVideo controller start------------");
+        const { key } = req.params;
+        if (!key) {
+            return res.status(400).json({
+                success: false,
+                message: "Missing required field: key"
+            });
+        }
+        console.log("------------deleteVideoFromEverywhere called------------");
+        const result = await deleteVideoFromEverywhere(key);
+        return res.status(200).json({
+            success: true,
+            message: "Video deleted successfully",
+            data: result
+        });
     } catch (error) {
+        console.log("------------------ deleteVideo error catch block ------------------");
         printCatchBlockError(error);
-        throw error; // Rethrow the error to be handled by the caller
-    };
-}
-module.exports = { videoUpload, getAllVideos, getVideo };
+        return res.status(500).json({
+            success: false,
+            message: "Failed to delete video",
+            error: process.env.NODE_ENV === "development"
+                ? error.message
+                : undefined
+        });
+    }
+};
+
+const updateVideoDetails = async (req, res) => {
+    try {
+        console.log("------------updateVideoDetails controller called------------");
+        const videoId = req.params.key;
+        console.log("1")
+        const { title, description, category, tags } = req.body;
+        console.log("2")
+        const updateData = {};
+        console.log("3")
+        if (title) updateData.title = title;
+        if (description) updateData.description = description;
+        if (category) updateData.category = category;
+        if (tags) updateData.tags = tags;
+        console.log("4")
+        console.log("Video Id :", videoId);
+        const response = await updateVideoDetailsInMongoDB(videoId, updateData);
+        console.log("5")
+        if (!response) {
+            return res.status(404).json({
+                success: false,
+                message: "Video not found or update failed"
+            });
+        }
+
+        const updatedVideo = await VideoModel.findById(videoId).populate("owner", "username").populate("channel", "name");
+        console.log("6");
+        console.log(updatedVideo);
+
+        return res.status(200).json({
+            success: true,
+            message: "Video details updated successfully",
+            data: updatedVideo
+        });
+    } catch (error) {
+        console.log("------------------ updateVideoDetails error catch block ------------------");
+        printCatchBlockError(error);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to update video details",
+            error: process.env.NODE_ENV === "development"
+                ? error.message
+                : undefined
+        });
+    }
+};
+
+const myVideos = async (req, res) => {
+    try {
+        console.log("------------myVideos controller called------------");
+
+        const userId = req.user._id; // Assuming you have user authentication middleware that adds the user object to the request
+        if (!userId) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized: User not authenticated"
+            });
+        }
+        console.log("user id : ", req.user._id); // Log the user object to verify it's being passed correctly
+
+        const videos = await VideoModel.find({ owner: userId }).populate("channel", "name");
+        console.log("Videos retrieved for user:", videos);
+
+        return res.status(200).json({
+            success: true,
+            message: "User's videos retrieved successfully",
+            totalVideos: videos.length,
+            data: videos
+        });
+    } catch (error) {
+        console.log("------------------ myVideos error catch block ------------------");
+        printCatchBlockError(error);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to retrieve user's videos",
+            error: process.env.NODE_ENV === "development"
+                ? error.message
+                : undefined
+        });
+    }
+};
+
+// const likeVideo = async (req, res) => {
+//     try {
+//         console.log("------------likeVideo controller called------------");
+//         const videoId = req.params.key;
+//         const userId = req.user._id; // Assuming you have user authentication middleware that adds the user object to the request
+
+//         if (!videoId) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: "Missing required field: videoId"
+//             });
+//         }
+
+//         if (!userId) {
+//             return res.status(401).json({
+//                 success: false,
+//                 message: "Unauthorized: User not authenticated"
+//             });
+//         }
+
+//         // Call the service function to handle the like operation
+//         const result = await likeVideoInMongoDB(userId, videoId);
+
+//         return res.status(200).json({
+//             success: true,
+//             message: "Video liked successfully",
+//             data: result
+//         });
+//     } catch (error) {
+//         console.log("------------------ likeVideo error catch block ------------------");
+//         printCatchBlockError(error);
+//         return res.status(500).json({
+//             success: false,
+//             message: "Failed to like video",
+//             error: process.env.NODE_ENV === "development"
+//                 ? error.message
+//                 : undefined
+//         });
+//     }
+// };
+
+const likeVideo = async (req, res) => {
+    try {
+        console.log("------------likeVideo controller called------------");
+
+        const videoId = req.params.key;
+        const userId = req.user?._id;
+
+        if (!videoId) {
+            return res.status(400).json({
+                success: false,
+                message: "Missing required field: videoId"
+            });
+        }
+
+        if (!userId) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized: User not authenticated"
+            });
+        }
+
+        const result = await likeVideoInMongoDB(userId, videoId);
+
+        return res.status(200).json({
+            success: true,
+            message: result.isLiked
+                ? "Video liked successfully"
+                : "Video unliked successfully",
+            data: result
+        });
+
+    } catch (error) {
+        console.log("------------------ likeVideo error catch block ------------------");
+        printCatchBlockError(error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to like video",
+            error: process.env.NODE_ENV === "development"
+                ? error.message
+                : undefined
+        });
+    }
+};
+
+module.exports = { videoUpload, getAllVideos, getVideo, deleteVideo, updateVideoDetails, myVideos, likeVideo };

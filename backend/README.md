@@ -45,3 +45,17 @@ http://localhost:1111/api/auth/videos
 
 8: get video by _id
 http://localhost:1111/api/auth/videos/6afc3c2f2d6de648173d22aa
+
+9: delete video but it will delete only when the user id and user channel are same and the owner of the video is same.
+it takes _id from the params of the url.
+http://localhost:1111/api/auth/videos/6afd32fa61cddeb6d3e3e56b
+
+10: get all video of the current user channel
+http://localhost:1111/api/auth/my-videos
+
+11: Update the video details and take data from the req.body;
+http://localhost:1111/api/auth/videos/6afd3de4d084ce9e15d88d6e
+
+12: for like and unlike
+/api/auth/videos/:id/like
+http://localhost:1111/api/auth/videos/6afd5067b8b1c2481c712e80/like

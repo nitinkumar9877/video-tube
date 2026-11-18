@@ -13,9 +13,9 @@ const { clearaccessTokenCookie, clearrefreshTokenCookie } = require("../utils/co
 const signUp = async (req, res) => {
     try {
         console.log("1");
-        const username = req.body.username?.trim();
-        const email = req.body.email?.trim().toLowerCase();
-        const { password } = req.body;
+        let { email, username, password } = req.body;
+        username = req.body.username?.trim();
+        email = req.body.email?.trim().toLowerCase();
         console.log("2");
 
         if (!username || !email || !password) {
