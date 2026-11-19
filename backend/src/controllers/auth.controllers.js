@@ -252,6 +252,16 @@ const refreshToken = async (req, res) => {
         console.log("----------------------Refresh Token controller start here----------------------");
         const user = req.user; // Assuming user is attached to req in middleware
         console.log("User from middleware:", user);
+        const userPreviousToken = await TokenModel.find({ userId: user._id });
+        console.log("Previous token for user:", userPreviousToken);
+        if (userPreviousToken) {
+            // Delete every previous token for the user whose ip is same from the current request and user agent is same from the current request
+            await TokenModel.deleteMany({
+                userId: user._id,
+                ipAddress: req.ip,
+                userAgent: req.get("user-agent") || null
+            });
+        }
         const { accessToken, refreshToken } = generateToken({ userId: user._id });
         console.log("New tokens generated successfully");
         console.log("New Access Token:", accessToken);
@@ -273,7 +283,7 @@ const refreshToken = async (req, res) => {
         });
         console.log("------------------------successfully refreshed the access token and refresh token------------------------");
         res.status(200).json({
-            status: true,
+            success: true,
             message: "Access token refreshed",
             accessToken: accessToken
         });
@@ -282,7 +292,7 @@ const refreshToken = async (req, res) => {
         console.log("----------------------Refresh Token controller catch block start here----------------------");
         console.error("Error during token refresh:", error);
         res.status(500).json({
-            status: false,
+            success: false,
             message: "Internal server error"
         });
     }

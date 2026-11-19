@@ -94,10 +94,11 @@ module.exports = accessTokenValidation;
 
 
 const refreshTokenValidation = async (req, res, next) => {
+    console.log("---------------------- refreshToeknValidation Middleware start here----------------------");
     const refreshToken = req.cookies?.refreshToken;
     if (!refreshToken) {
         return res.status(401).json({
-            status: false,
+            success: false,
             message: "Refresh token is missing."
         });
     }
@@ -128,6 +129,8 @@ const refreshTokenValidation = async (req, res, next) => {
         user = await userModel.findById(decodedrefreshToken.userId);
         // console.log("User found:", user);
         if (!user) {
+            clearaccessTokenCookie(res);
+            clearrefreshTokenCookie(res);
             return res.status(401).json({
                 success: false,
                 message: "User not found."

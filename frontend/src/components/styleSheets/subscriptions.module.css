@@ -1,0 +1,350 @@
+.page {
+    min-height: calc(100vh - 64px);
+    background: #f7f7f8;
+    color: #0f0f0f;
+}
+
+.pageWrap {
+    width: min(1120px, calc(100% - 32px));
+    margin: 0 auto;
+    padding: 30px 0 48px;
+}
+
+.pageHeader {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+
+.eyebrow {
+    margin: 0 0 4px;
+    color: #777;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.pageHeader h1 {
+    margin: 0;
+    font-size: 26px;
+    line-height: 1.2;
+}
+
+.feedCount {
+    color: #606060;
+    font-size: 13px;
+}
+
+.contentGrid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 330px;
+    align-items: start;
+    gap: 24px;
+}
+
+.channelList,
+.feedPanel {
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.channelCard {
+    display: flex;
+    min-height: 112px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px;
+    border-bottom: 1px solid #ededed;
+}
+
+.channelCard:last-child {
+    border-bottom: 0;
+}
+
+.channelIdentity {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 14px;
+}
+
+.channelAvatar {
+    --avatar-accent: #ef4444;
+    display: grid;
+    flex: 0 0 72px;
+    width: 72px;
+    height: 72px;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--avatar-accent);
+    color: #fff;
+    font-size: 24px;
+    font-weight: 800;
+}
+
+.channelDetails {
+    min-width: 0;
+}
+
+.channelDetails h2 {
+    overflow: hidden;
+    margin: 0 0 4px;
+    color: #0f0f0f;
+    font-size: 16px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.channelDetails p {
+    overflow: hidden;
+    margin: 2px 0;
+    color: #606060;
+    font-size: 13px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cardActions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 8px;
+}
+
+.notificationButton {
+    display: grid;
+    width: 38px;
+    height: 38px;
+    place-items: center;
+    border: 0;
+    border-radius: 50%;
+    background: #f2f2f2;
+    color: #606060;
+    font-size: 20px;
+}
+
+.notificationButton:hover {
+    background: #e8e8e8;
+}
+
+.subscriptionButton {
+    display: inline-flex;
+    height: 38px;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border: 0;
+    border-radius: 6px;
+    padding: 0 14px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.subscriptionButton svg {
+    width: 17px;
+    height: 17px;
+}
+
+.subscribed {
+    background: #ededed;
+    color: #606060;
+}
+
+.unsubscribed {
+    background: #ff0033;
+    color: #fff;
+}
+
+.feedPanel {
+    position: sticky;
+    top: 84px;
+    overflow: hidden;
+}
+
+.feedHeading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px;
+    border-bottom: 1px solid #ededed;
+}
+
+.feedHeading svg {
+    width: 24px;
+    height: 24px;
+    color: #ff0033;
+}
+
+.feedHeading div {
+    display: flex;
+    flex-direction: column;
+}
+
+.feedHeading strong {
+    font-size: 14px;
+}
+
+.feedHeading span {
+    margin-top: 2px;
+    color: #777;
+    font-size: 12px;
+}
+
+.uploadItem {
+    display: grid;
+    grid-template-columns: 112px minmax(0, 1fr);
+    gap: 10px;
+    padding: 12px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.uploadItem:last-child {
+    border-bottom: 0;
+}
+
+.videoThumb {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    border-radius: 6px;
+    background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.1), transparent),
+        #303030;
+}
+
+.videoThumb::before,
+.videoThumb::after {
+    position: absolute;
+    content: "";
+}
+
+.videoThumb::before {
+    right: 18%;
+    bottom: 20%;
+    width: 44%;
+    height: 34%;
+    border: 2px solid rgba(255, 255, 255, 0.38);
+}
+
+.videoThumb::after {
+    top: 28%;
+    left: 22%;
+    width: 12%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: #ff0033;
+}
+
+.videoThumb span {
+    position: absolute;
+    right: 5px;
+    bottom: 5px;
+    z-index: 1;
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.82);
+    padding: 2px 4px;
+    color: #fff;
+    font-size: 10px;
+}
+
+.uploadDetails {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+}
+
+.uploadDetails strong,
+.uploadDetails span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.uploadDetails strong {
+    margin-bottom: 5px;
+    font-size: 12px;
+    line-height: 1.35;
+}
+
+.uploadDetails span {
+    color: #606060;
+    font-size: 11px;
+    line-height: 1.55;
+}
+
+@media (max-width: 900px) {
+    .contentGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .feedPanel {
+        position: static;
+    }
+}
+
+@media (max-width: 640px) {
+    .pageWrap {
+        width: 100%;
+        padding: 20px 0 32px;
+    }
+
+    .pageHeader {
+        padding-inline: 12px;
+    }
+
+    .pageHeader h1 {
+        font-size: 22px;
+    }
+
+    .channelList,
+    .feedPanel {
+        border-right: 0;
+        border-left: 0;
+        border-radius: 0;
+    }
+
+    .channelCard {
+        min-height: 96px;
+        padding: 12px;
+    }
+
+    .channelAvatar {
+        flex-basis: 56px;
+        width: 56px;
+        height: 56px;
+        font-size: 20px;
+    }
+
+    .channelDetails h2 {
+        max-width: 180px;
+        font-size: 14px;
+    }
+
+    .channelDetails p {
+        max-width: 180px;
+        font-size: 12px;
+    }
+
+    .notificationButton {
+        display: none;
+    }
+
+    .subscriptionButton {
+        width: 38px;
+    
+        padding: 0;
+        font-size: 0;
+    }
+
+    .subscriptionButton svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .uploadItem {
+        grid-template-columns: 132px minmax(0, 1fr);
+        padding-inline: 12px;
+    }
+}

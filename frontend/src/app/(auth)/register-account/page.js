@@ -1,21 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-
-import {
-    FaArrowLeft,
-    FaUser,
-    FaEnvelope,
-    FaLock,
-} from "react-icons/fa";
-
+import { useRouter } from "next/navigation";
+import { FaArrowLeft, FaUser, FaEnvelope, FaLock, } from "react-icons/fa";
 import { ClipLoader } from "react-spinners";
-
 import styles from "../../../components/styleSheets/register.module.css";
 import logo from "../../../assets/playTube.webp";
-import { AuthRegisterUser } from "@/services/AuthUser";
+import { AuthRegisterUser, checkAlreadyLogin } from "@/services/AuthUser";
 
 // Initial form state
 const INITIAL_FORM_DATA = {
@@ -48,7 +41,6 @@ const validateBasicInfo = ({ username, email }) => {
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
         errors.email = "Please enter a valid email address";
     }
-
     return errors;
 };
 
@@ -142,17 +134,29 @@ const getRegistrationError = (error) => {
 };
 
 const RegisterNewUser = () => {
+    const router = useRouter();
     const [step, setStep] = useState(1);
-
     const [formData, setFormData] = useState(INITIAL_FORM_DATA);
-
     const [errors, setErrors] = useState({});
-
     const [isLoading, setIsLoading] = useState(false);
-
     const [showPassword, setShowPassword] = useState(false);
-
     const [successMessage, setSuccessMessage] = useState("");
+    
+    useEffect(() => {
+        const fetchUser = async () => {
+            try {
+                const response = await checkAlreadyLogin();
+                console.log("Response from checkAlreadyLogin API :: ", response);
+                if (response?.success) {
+                    router.push("/");
+                }
+            } catch (error) {
+                console.error("Error fetching user:", error);
+            }
+        };
+
+        fetchUser();
+    });
 
     // Handle input changes
     const handleInputChange = (e) => {
@@ -246,13 +250,10 @@ const RegisterNewUser = () => {
 
             console.log("Registration successful:", responseData);
 
-            setSuccessMessage(
-                "Account created successfully! You can now sign in."
-            );
-
             setFormData(INITIAL_FORM_DATA);
             setStep(1);
             setShowPassword(false);
+            router.push("/");
 
         } catch (error) {
             console.error(
@@ -342,9 +343,8 @@ const RegisterNewUser = () => {
                     {[1, 2].map((item) => (
                         <div
                             key={item}
-                            className={`${styles.stepBar} ${
-                                step >= item ? styles.activeStep : ""
-                            }`}
+                            className={`${styles.stepBar} ${step >= item ? styles.activeStep : ""
+                                }`}
                         />
                     ))}
                 </div>

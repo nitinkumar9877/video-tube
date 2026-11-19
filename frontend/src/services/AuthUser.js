@@ -41,3 +41,17 @@ export const AuthLoginUser = async (payload) => {
         throw error;
     }
 };
+
+export const checkAlreadyLogin = async () => {
+    try {
+        const checkLoginApi = `${process.env.NEXT_PUBLIC_API_URL}${process.env.NEXT_PUBLIC_AUTH_API_PATH}refresh-token`;
+        const response = await axios.post(checkLoginApi,{}, { withCredentials: true });
+        return response.data;
+    } catch (error) {
+        console.log(
+            "Check login failed:",
+            error.response?.data || error.message
+        );
+        throw error;
+    }
+};

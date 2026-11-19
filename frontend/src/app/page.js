@@ -5,20 +5,9 @@ import Link from "next/link";
 import { MdMoreVert } from "react-icons/md";
 import styles from "./page.module.css";
 import logo from "@/assets/playTube.webp";
-import { useEffect } from "react";
-import { getAllVideos } from "@/services/videos";
+import { useMemo, useState } from "react";
 
-const categories = [
-  "All",
-  "Music",
-  "Live",
-  "Gaming",
-  "Mixes",
-  "Programming",
-  "News",
-  "Podcasts",
-  "Comedy",
-];
+const categories = ["All", 'Education', 'Entertainment', 'Music', 'Sports', 'News', 'Gaming', 'Lifestyle', 'Other'];
 // let videos = [];
 const videos = [
   {
@@ -28,6 +17,7 @@ const videos = [
     meta: "1.2M views • 2 days ago",
     duration: "18:24",
     theme: "violet",
+    category: "Education",
   },
   {
     id: 2,
@@ -36,6 +26,7 @@ const videos = [
     meta: "842K views • 1 week ago",
     duration: "12:08",
     theme: "orange",
+    category: "Lifestyle",
   },
   {
     id: 3,
@@ -44,6 +35,7 @@ const videos = [
     meta: "5.7M views • 3 weeks ago",
     duration: "LIVE",
     theme: "blue",
+    category: "Music",
   },
   {
     id: 4,
@@ -52,6 +44,7 @@ const videos = [
     meta: "326K views • 5 days ago",
     duration: "21:41",
     theme: "green",
+    category: "Lifestyle",
   },
   {
     id: 5,
@@ -60,6 +53,7 @@ const videos = [
     meta: "2.1M views • 1 month ago",
     duration: "16:52",
     theme: "rose",
+    category: "Lifestyle",
   },
   {
     id: 6,
@@ -68,6 +62,7 @@ const videos = [
     meta: "680K views • 4 days ago",
     duration: "24:15",
     theme: "cyan",
+    category: "Education",
   },
   {
     id: 7,
@@ -76,6 +71,7 @@ const videos = [
     meta: "914K views • 6 days ago",
     duration: "14:33",
     theme: "yellow",
+    category: "Lifestyle",
   },
   {
     id: 8,
@@ -84,25 +80,28 @@ const videos = [
     meta: "48K watching",
     duration: "LIVE",
     theme: "red",
+    category: "Entertainment",
   },
 ];
 
 export default function HomePage() {
+  const [selectedCategory, setSelectedCategory] = useState("All");
 
-  // useEffect(async () => {
-  //   const response = await getAllVideos();
-  //   if (response && response.data) {
-  //     videos = response.data;
-  //   };
-  // }, [])
+  const filteredVideos = useMemo(() => {
+    if (selectedCategory === "All") return videos;
+    return videos.filter((video) => video.category === selectedCategory);
+  }, [selectedCategory]);
+
   return (
     <div className={styles.page}>
       <div className={styles.categoryBar} aria-label="Video categories">
-        {categories.map((category, index) => (
+        {categories.map((category) => (
           <button
             type="button"
-            className={`${styles.category} ${index === 0 ? styles.active : ""}`}
+            className={`${styles.category} ${selectedCategory === category ? styles.active : ""}`}
             key={category}
+            onClick={() => setSelectedCategory(category)}
+            aria-pressed={selectedCategory === category}
           >
             {category}
           </button>
@@ -110,7 +109,7 @@ export default function HomePage() {
       </div>
 
       <section className={styles.videoGrid} aria-label="Recommended videos">
-        {videos.map((video) => (
+        {filteredVideos.map((video) => (
           <article className={styles.videoCard} key={video.id}>
             <Link href={`/dashboard/videos/${video.id}`} className={styles.thumbnailLink}>
               <div className={`${styles.thumbnail} ${styles[video.theme]}`}>

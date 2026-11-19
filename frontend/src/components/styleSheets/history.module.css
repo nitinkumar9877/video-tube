@@ -1,0 +1,391 @@
+.page {
+    min-height: calc(100vh - 64px);
+    background: #f7f7f8;
+    color: #0f0f0f;
+}
+
+.pageWrap {
+    width: min(1120px, calc(100% - 32px));
+    margin: 0 auto;
+    padding: 30px 0 48px;
+}
+
+.pageHeader {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+
+.eyebrow {
+    margin: 0 0 4px;
+    color: #777;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.pageHeader h1 {
+    margin: 0;
+    font-size: 26px;
+    line-height: 1.2;
+}
+
+.clearButton {
+    height: 38px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    padding: 0 10px;
+    color: #065fd4;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.clearButton:hover {
+    background: #eaf2ff;
+}
+
+.layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    align-items: start;
+    gap: 24px;
+}
+
+.historyContent,
+.historySidebar {
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.historyGroup {
+    padding: 18px;
+    border-bottom: 1px solid #ededed;
+}
+
+.historyGroup:last-child {
+    border-bottom: 0;
+}
+
+.historyGroup h2 {
+    margin: 0 0 10px;
+    color: #606060;
+    font-size: 13px;
+}
+
+.videoList {
+    display: flex;
+    flex-direction: column;
+}
+
+.historyItem {
+    display: grid;
+    grid-template-columns: 168px minmax(0, 1fr) 72px;
+    align-items: center;
+    gap: 14px;
+    min-height: 112px;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.historyItem:last-child {
+    border-bottom: 0;
+}
+
+.thumbnail {
+    --thumbnail-accent: #1d4ed8;
+    position: relative;
+    overflow: hidden;
+    width: 168px;
+    aspect-ratio: 16 / 9;
+    border-radius: 6px;
+    background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.12), transparent 62%),
+        var(--thumbnail-accent);
+}
+
+.thumbnailPattern {
+    position: absolute;
+    right: -12%;
+    bottom: -30%;
+    width: 75%;
+    height: 74%;
+    transform: rotate(-18deg);
+    border: 8px solid rgba(255, 255, 255, 0.17);
+    border-radius: 50%;
+}
+
+.duration {
+    position: absolute;
+    right: 6px;
+    bottom: 6px;
+    z-index: 2;
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.82);
+    padding: 2px 4px;
+    color: #fff;
+    font-size: 10px;
+}
+
+.progressTrack {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 2;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.38);
+}
+
+.progressTrack span {
+    display: block;
+    height: 100%;
+    background: #ff0033;
+}
+
+.videoDetails {
+    min-width: 0;
+}
+
+.videoTitle {
+    display: block;
+    overflow: hidden;
+    color: #0f0f0f;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.videoTitle:hover {
+    color: #065fd4;
+}
+
+.videoDetails p {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 7px 0 4px;
+    color: #606060;
+    font-size: 12px;
+}
+
+.dot {
+    color: #aaa;
+}
+
+.watchedTime {
+    color: #777;
+    font-size: 12px;
+}
+
+.itemActions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 2px;
+}
+
+.iconButton,
+.removeButton {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #606060;
+}
+
+.iconButton:hover,
+.removeButton:hover {
+    background: #f2f2f2;
+}
+
+.iconButton svg,
+.removeButton svg {
+    width: 20px;
+    height: 20px;
+}
+
+.historySidebar {
+    position: sticky;
+    top: 84px;
+    padding: 16px;
+}
+
+.searchBox {
+    display: flex;
+    height: 42px;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #d8d8d8;
+    border-radius: 6px;
+    background: #fff;
+    padding: 0 10px;
+}
+
+.searchBox:focus-within {
+    border-color: #065fd4;
+    box-shadow: 0 0 0 3px rgba(6, 95, 212, 0.08);
+}
+
+.searchBox svg {
+    flex: 0 0 20px;
+    width: 20px;
+    height: 20px;
+    color: #777;
+}
+
+.searchBox input {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: #0f0f0f;
+    font-size: 13px;
+}
+
+.summaryCard {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-top: 14px;
+    border-top: 1px solid #ededed;
+    border-bottom: 1px solid #ededed;
+    padding: 16px 0;
+}
+
+.summaryCard strong {
+    color: #ff0033;
+    font-size: 24px;
+}
+
+.summaryCard span {
+    color: #606060;
+    font-size: 12px;
+}
+
+.privacyText {
+    margin: 14px 0 0;
+    color: #777;
+    font-size: 12px;
+    line-height: 1.55;
+}
+
+.emptyState {
+    display: grid;
+    min-height: 280px;
+    place-content: center;
+    justify-items: center;
+    padding: 32px;
+    text-align: center;
+}
+
+.emptyState svg {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 12px;
+    color: #aaa;
+}
+
+.emptyState h2 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.emptyState p {
+    margin: 6px 0 0;
+    color: #777;
+    font-size: 13px;
+}
+
+@media (max-width: 900px) {
+    .layout {
+        grid-template-columns: 1fr;
+    }
+
+    .historySidebar {
+        position: static;
+        grid-row: 1;
+    }
+}
+
+@media (max-width: 640px) {
+    .pageWrap {
+        width: 100%;
+        padding: 20px 0 32px;
+    }
+
+    .pageHeader {
+        align-items: center;
+        padding-inline: 12px;
+    }
+
+    .pageHeader h1 {
+        font-size: 22px;
+    }
+
+    .clearButton {
+        max-width: 116px;
+        line-height: 1.2;
+    }
+
+    .historyContent,
+    .historySidebar {
+        border-right: 0;
+        border-left: 0;
+        border-radius: 0;
+    }
+
+    .historyGroup {
+        padding: 14px 12px;
+    }
+
+    .historyItem {
+        grid-template-columns: 132px minmax(0, 1fr) 34px;
+        gap: 10px;
+        min-height: 96px;
+    }
+
+    .thumbnail {
+        width: 132px;
+    }
+
+    .videoTitle {
+        font-size: 13px;
+        white-space: normal;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+    }
+
+    .videoDetails p {
+        flex-wrap: wrap;
+        margin-top: 5px;
+    }
+
+    .watchedTime,
+    .iconButton {
+        display: none;
+    }
+
+    .itemActions {
+        justify-content: center;
+    }
+
+    .historySidebar {
+        margin-bottom: 14px;
+    }
+
+    .summaryCard,
+    .privacyText {
+        display: none;
+    }
+}

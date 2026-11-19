@@ -2,40 +2,25 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import {
-  MdMenu,
-  MdMic,
-  MdSearch,
-  MdVideoCall,
-  MdNotificationsNone,
-  MdHome,
-  MdSubscriptions,
-  MdHistory,
-  MdPlaylistPlay,
-  MdWatchLater,
-  MdThumbUpOffAlt,
-  MdLocalFireDepartment,
-  MdMusicNote,
-  MdSportsEsports,
-  MdNewspaper,
-  MdSettings,
-  MdOutlinedFlag,
-  MdHelpOutline,
-} from "react-icons/md";
+import { usePathname, useRouter } from "next/navigation";
+import { MdMenu, MdMic, MdSearch, MdVideoCall, MdNotificationsNone, MdHome, MdSubscriptions, MdHistory, MdPlaylistPlay, MdWatchLater, MdThumbUpOffAlt, MdLocalFireDepartment, MdMusicNote, MdSportsEsports, MdNewspaper, MdSettings, MdOutlinedFlag, MdHelpOutline, } from "react-icons/md";
+import { FaCircleUser } from "react-icons/fa6";
 import styles from "../styleSheets/app-shell.module.css";
 import logo from "@/assets/playTube.webp";
+import { useEffect, useRef, useState } from "react";
+import { checkAlreadyLogin } from "@/services/AuthUser";
+import api from "@/services/api";
 
 const primaryLinks = [
   { label: "Home", href: "/", icon: MdHome },
-  { label: "Subscriptions", href: "/subscriptions", icon: MdSubscriptions },
-  { label: "History", href: "/history", icon: MdHistory },
+  { label: "Subscriptions", href: "/user/subscriptions", icon: MdSubscriptions },
+  { label: "History", href: "/user/history", icon: MdHistory },
 ];
 
 const libraryLinks = [
   // { label: "Playlists", href: "/playlists", icon: MdPlaylistPlay },
   // { label: "Watch later", href: "/watch-later", icon: MdWatchLater },
-  { label: "Liked videos", href: "/liked", icon: MdThumbUpOffAlt },
+  { label: "Liked videos", href: "/user/liked", icon: MdThumbUpOffAlt },
 ];
 
 const exploreLinks = [
@@ -61,7 +46,48 @@ function SidebarLink({ item, pathname }) {
 }
 
 export default function AppShell({ children }) {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef(null);
   const pathname = usePathname();
+  const router = useRouter();
+
+  useEffect(() => {
+    const closeMenu = (event) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+        setProfileMenuOpen(false);
+      }
+    };
+
+    const closeMenuOnEscape = (event) => {
+      if (event.key === "Escape") setProfileMenuOpen(false);
+    };
+
+    document.addEventListener("mousedown", closeMenu);
+    document.addEventListener("keydown", closeMenuOnEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", closeMenu);
+      document.removeEventListener("keydown", closeMenuOnEscape);
+    };
+  }, []);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await checkAlreadyLogin();
+        console.log("Response from checkAlreadyLogin API :: ", response);
+        if (response?.success) {
+          setIsLoggedIn(true);
+        }
+      } catch (error) {
+        console.error("Error fetching user:", error);
+        setIsLoggedIn(false);
+      }
+    };
+
+    fetchUser();
+  }, []);
   const isAuthPage =
     pathname.startsWith("/login") || pathname.startsWith("/register-account");
 
@@ -95,15 +121,63 @@ export default function AppShell({ children }) {
         </div>
 
         <div className={styles.headerActions}>
-          <button type="button" className={styles.iconButton} aria-label="Create">
-            <MdVideoCall />
-          </button>
-          <button type="button" className={styles.iconButton} aria-label="Notifications">
-            <MdNotificationsNone />
-          </button>
-          <Link href="/user" className={styles.profile} aria-label="User profile">
-            N
-          </Link>
+          
+          {isLoggedIn ? (
+            <div className={styles.profileMenuWrap} ref={profileMenuRef}>
+              <button
+                type="button"
+                className={styles.profileTrigger}
+                aria-label="Open user menu"
+                aria-expanded={profileMenuOpen}
+                onClick={() => setProfileMenuOpen((open) => !open)}
+              >
+                <span className={styles.profileIconLogin}>N</span>
+              </button>
+
+              <div className={`${styles.profileMenu} ${profileMenuOpen ? styles.profileMenuOpen : ""}`}>
+                <Link href="/user" className={styles.loginButton} onClick={() => setProfileMenuOpen(false)}>
+                  Profile
+                </Link>
+                <button
+                  type="button"
+                  className={styles.signupButton}
+                  onClick={async () => {
+                    setProfileMenuOpen(false);
+                    try {
+                      await api.post("/api/auth/logout");
+                    } finally {
+                      setIsLoggedIn(false);
+                      router.push("/login");
+                      router.refresh();
+                    }
+                  }}
+                >
+                  Log out
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className={styles.profileMenuWrap} ref={profileMenuRef}>
+              <button
+                type="button"
+                className={styles.profileTrigger}
+                aria-label="Open account menu"
+                aria-expanded={profileMenuOpen}
+                onClick={() => setProfileMenuOpen((open) => !open)}
+              >
+                <FaCircleUser className={styles.profileIconNoLogin} />
+              </button>
+
+              <div className={`${styles.profileMenu} ${profileMenuOpen ? styles.profileMenuOpen : ""}`}>
+                <Link href="/login" className={styles.loginButton} onClick={() => setProfileMenuOpen(false)}>
+                  Log in
+                </Link>
+                <Link href="/register-account" className={styles.signupButton} onClick={() => setProfileMenuOpen(false)}>
+                  Sign up
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
       </header>
 

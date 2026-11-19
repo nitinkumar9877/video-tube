@@ -3,33 +3,26 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import {
-    MdAdd,
-    MdArrowForward,
-    MdEdit,
-    MdHistory,
-    MdOutlineVideoLibrary,
-    MdSubscriptions,
-    MdVideoCall,
-} from "react-icons/md";
+import { MdAdd, MdArrowForward, MdEdit, MdHistory, MdOutlineVideoLibrary, MdSubscriptions, MdVideoCall, } from "react-icons/md";
 import api from "@/services/api";
 import styles from "../../components/styleSheets/userProfile.module.css";
 
 export default function UserPage() {
-    const [user] = useState(() => {
-        if (typeof window === "undefined") return null;
-
-        try {
-            const savedUser = window.localStorage.getItem("playtube_user");
-            return savedUser ? JSON.parse(savedUser) : null;
-        } catch {
-            return null;
-        }
-    });
+    const [user, setUser] = useState(null);
     const [channel, setChannel] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        try {
+            const savedUser = window.localStorage.getItem("playtube_user");
+            setUser(savedUser ? JSON.parse(savedUser) : null);
+        } catch {
+            setUser(null);
+        }
+    }, []);
+
+    useEffect(() => {
+        
         api
             .get("/api/auth/channels/me")
             .then((response) => setChannel(response.data?.channel || null))
@@ -160,26 +153,41 @@ export default function UserPage() {
 
                 <aside className={styles.quickPanel}>
                     <h2>Quick links</h2>
-                    <Link href="/dashboard/upload" className={styles.quickLink}>
-                        <span className={styles.quickIcon}>
-                            <MdVideoCall />
-                        </span>
-                        <span>
-                            <strong>Upload a video</strong>
-                            <small>Share something new</small>
-                        </span>
-                        <MdArrowForward />
-                    </Link>
-                    <Link href="/dashboard/videos" className={styles.quickLink}>
-                        <span className={styles.quickIcon}>
-                            <MdOutlineVideoLibrary />
-                        </span>
-                        <span>
-                            <strong>Your videos</strong>
-                            <small>Manage uploads</small>
-                        </span>
-                        <MdArrowForward />
-                    </Link>
+                    {channel && (
+                        <>
+                            <Link href="/dashboard/upload" className={styles.quickLink}>
+                                <span className={styles.quickIcon}>
+                                    <MdVideoCall />
+                                </span>
+                                <span>
+                                    <strong>Upload a video</strong>
+                                    <small>Share something new</small>
+                                </span>
+                                <MdArrowForward />
+                            </Link>
+
+                            <Link href="/subscriptions" className={styles.quickLink}>
+                                <span className={styles.quickIcon}>
+                                    <MdSubscriptions />
+                                </span>
+                                <span>
+                                    <strong>Subscriptions</strong>
+                                    <small>Explore channels</small>
+                                </span>
+                                <MdArrowForward />
+                            </Link>
+                            <Link href="/dashboard/videos" className={styles.quickLink}>
+                                <span className={styles.quickIcon}>
+                                    <MdOutlineVideoLibrary />
+                                </span>
+                                <span>
+                                    <strong>Your videos</strong>
+                                    <small>Manage uploads</small>
+                                </span>
+                                <MdArrowForward />
+                            </Link>
+                        </>
+                    )}
                     <Link href="/history" className={styles.quickLink}>
                         <span className={styles.quickIcon}>
                             <MdHistory />
@@ -187,16 +195,6 @@ export default function UserPage() {
                         <span>
                             <strong>Watch history</strong>
                             <small>Continue watching</small>
-                        </span>
-                        <MdArrowForward />
-                    </Link>
-                    <Link href="/subscriptions" className={styles.quickLink}>
-                        <span className={styles.quickIcon}>
-                            <MdSubscriptions />
-                        </span>
-                        <span>
-                            <strong>Subscriptions</strong>
-                            <small>Explore channels</small>
                         </span>
                         <MdArrowForward />
                     </Link>

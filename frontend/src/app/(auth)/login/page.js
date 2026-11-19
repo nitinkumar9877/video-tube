@@ -9,10 +9,10 @@ import { ClipLoader } from "react-spinners";
 
 import styles from "../../../components/styleSheets/login.module.css";
 import logo from "../../../assets/playTube.webp";
-import { AuthLoginUser } from "@/services/AuthUser";
+import { AuthLoginUser, checkAlreadyLogin } from "@/services/AuthUser";
 
 const LoginPage = () => {
-   
+
     const router = useRouter();
     const [formData, setFormData] = useState({
         email: "",
@@ -22,6 +22,22 @@ const LoginPage = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [errors, setErrors] = useState({});
+
+    useEffect(() => {
+        const fetchUser = async () => {
+            try {
+                const response = await checkAlreadyLogin();
+                console.log("Response from checkAlreadyLogin API :: ", response);
+                if (response?.success) {
+                    router.push("/");
+                }
+            } catch (error) {
+                console.error("Error fetching user:", error);
+            }
+        };
+
+        fetchUser();
+    });
 
     // Handle input changes
     const handleInputChange = (e) => {

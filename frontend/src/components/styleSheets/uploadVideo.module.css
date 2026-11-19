@@ -1,0 +1,369 @@
+.page {
+    min-height: calc(100vh - 64px);
+    background:
+        radial-gradient(circle at top right, rgba(255, 0, 51, 0.05), transparent 28rem),
+        #f7f7f8;
+}
+
+.pageWrap {
+    width: min(860px, calc(100% - 32px));
+    margin: 0 auto;
+    padding: 32px 0 48px;
+}
+
+.backLink {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 18px;
+    color: #606060;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.backLink svg {
+    width: 20px;
+    height: 20px;
+}
+
+.uploadCard {
+    overflow: hidden;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 10px 32px rgba(15, 15, 15, 0.06);
+}
+
+.formHeader {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 26px 28px;
+    border-bottom: 1px solid #ededed;
+}
+
+.headerIcon {
+    display: grid;
+    flex: 0 0 48px;
+    width: 48px;
+    height: 48px;
+    place-items: center;
+    border-radius: 8px;
+    background: #ff0033;
+    color: #fff;
+    font-size: 26px;
+}
+
+.formHeader h1 {
+    margin: 0;
+    color: #0f0f0f;
+    font-size: 24px;
+    line-height: 1.2;
+}
+
+.formHeader p {
+    margin: 5px 0 0;
+    color: #606060;
+    font-size: 14px;
+}
+
+.messageError,
+.messageSuccess {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 20px 28px 0;
+    padding: 12px 14px;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.messageError {
+    border: 1px solid #fecaca;
+    background: #fff5f5;
+    color: #b91c1c;
+}
+
+.messageSuccess {
+    border: 1px solid #bbf7d0;
+    background: #f0fdf4;
+    color: #166534;
+}
+
+.messageError svg,
+.messageSuccess svg {
+    flex: 0 0 20px;
+    width: 20px;
+    height: 20px;
+}
+
+.formBody {
+    padding: 28px;
+}
+
+.mediaGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.mediaField {
+    min-width: 0;
+}
+
+.mediaLabel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    color: #222;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.mediaLabel span {
+    color: #858585;
+    font-size: 12px;
+    font-weight: 400;
+}
+
+.uploadBox {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    border: 1px dashed #cfcfcf;
+    border-radius: 8px;
+    background: #fafafa;
+}
+
+.uploadBox:focus-within {
+    border-color: #ff0033;
+}
+
+.emptyUpload {
+    display: grid;
+    width: 100%;
+    height: 100%;
+    place-content: center;
+    justify-items: center;
+    color: #777;
+    cursor: pointer;
+}
+
+.emptyUpload svg {
+    width: 42px;
+    height: 42px;
+    margin-bottom: 10px;
+    color: #ff0033;
+}
+
+.emptyUpload strong {
+    color: #222;
+    font-size: 14px;
+}
+
+.emptyUpload span {
+    margin-top: 4px;
+    font-size: 12px;
+}
+
+.emptyUpload:hover strong {
+    color: #ff0033;
+}
+
+.hasPreview {
+    border-style: solid;
+    border-color: #dedede;
+    background: #111;
+}
+
+.hasPreview video,
+.hasPreview img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.hasPreview img {
+    object-fit: cover;
+}
+
+.removeButton {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(15, 15, 15, 0.82);
+    color: #fff;
+}
+
+.removeButton svg {
+    width: 20px;
+    height: 20px;
+}
+
+.detailsGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+    margin-top: 24px;
+}
+
+.field {
+    display: grid;
+    min-width: 0;
+    gap: 8px;
+    color: #222;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.fullField {
+    grid-column: 1 / -1;
+}
+
+.field > span small {
+    color: #858585;
+    font-size: 11px;
+    font-weight: 400;
+}
+
+.field input,
+.field select,
+.field textarea {
+    width: 100%;
+    border: 1px solid #d8d8d8;
+    border-radius: 6px;
+    background: #fff;
+    color: #0f0f0f;
+    outline: none;
+    font-size: 14px;
+    font-weight: 400;
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.field input,
+.field select {
+    height: 46px;
+    padding: 0 13px;
+}
+
+.field textarea {
+    min-height: 120px;
+    resize: vertical;
+    padding: 12px 13px;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+    border-color: #ff0033;
+    box-shadow: 0 0 0 3px rgba(255, 0, 51, 0.09);
+}
+
+.field > small {
+    justify-self: end;
+    color: #858585;
+    font-size: 12px;
+    font-weight: 400;
+}
+
+.formActions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 18px 28px;
+    border-top: 1px solid #ededed;
+    background: #fafafa;
+}
+
+.cancelButton,
+.submitButton {
+    display: inline-flex;
+    height: 42px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    padding: 0 18px;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.cancelButton {
+    color: #606060;
+}
+
+.cancelButton:hover {
+    background: #ededed;
+}
+
+.submitButton {
+    border: 0;
+    background: #ff0033;
+    color: #fff;
+}
+
+.submitButton:hover:not(:disabled) {
+    background: #d9002b;
+}
+
+.submitButton:disabled {
+    cursor: wait;
+    opacity: 0.55;
+}
+
+@media (max-width: 640px) {
+    .pageWrap {
+        width: min(100% - 20px, 860px);
+        padding-top: 20px;
+    }
+
+    .formHeader {
+        align-items: flex-start;
+        padding: 20px;
+    }
+
+    .headerIcon {
+        flex-basis: 42px;
+        width: 42px;
+        height: 42px;
+    }
+
+    .formHeader h1 {
+        font-size: 20px;
+    }
+
+    .messageError,
+    .messageSuccess {
+        margin-inline: 20px;
+    }
+
+    .formBody {
+        padding: 20px;
+    }
+
+    .mediaGrid,
+    .detailsGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .fullField {
+        grid-column: auto;
+    }
+
+    .formActions {
+        padding: 14px 20px;
+    }
+
+    .cancelButton,
+    .submitButton {
+        flex: 1;
+    }
+}

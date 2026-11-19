@@ -1,0 +1,388 @@
+.channelSettingsPage {
+    min-height: calc(100vh - 64px);
+    background:
+        radial-gradient(circle at top left, rgba(255, 0, 51, 0.055), transparent 26rem),
+        #f7f7f8;
+}
+
+.pageWrap {
+    width: min(760px, calc(100% - 32px));
+    margin: 0 auto;
+    padding: 32px 0 48px;
+}
+
+.backLink {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 18px;
+    color: #606060;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.backLink svg {
+    width: 20px;
+    height: 20px;
+}
+
+.channelForm {
+    overflow: hidden;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 10px 32px rgba(15, 15, 15, 0.06);
+}
+
+.formHeader {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 26px 28px;
+    border-bottom: 1px solid #ededed;
+}
+
+.headerIcon {
+    display: grid;
+    flex: 0 0 48px;
+    width: 48px;
+    height: 48px;
+    place-items: center;
+    border-radius: 8px;
+    background: #ff0033;
+    color: #fff;
+    font-size: 26px;
+}
+
+.formHeader h1 {
+    margin: 0;
+    color: #0f0f0f;
+    font-size: 24px;
+    line-height: 1.2;
+}
+
+.formHeader p {
+    margin: 5px 0 0;
+    color: #606060;
+    font-size: 14px;
+}
+
+.errorMessage {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 20px 28px 0;
+    padding: 12px 14px;
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+    background: #fff5f5;
+    color: #b91c1c;
+    font-size: 14px;
+}
+
+.errorMessage svg {
+    flex: 0 0 20px;
+    width: 20px;
+    height: 20px;
+}
+
+.logoSection {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    margin: 28px;
+    padding: 22px;
+    border: 1px solid #ececec;
+    border-radius: 8px;
+    background: #fafafa;
+}
+
+.logoPicker {
+    position: relative;
+    flex: 0 0 112px;
+    cursor: pointer;
+}
+
+.avatarPreview {
+    display: grid;
+    width: 112px;
+    height: 112px;
+    overflow: hidden;
+    place-items: center;
+    border: 1px solid #dedede;
+    border-radius: 50%;
+    background: #ededed;
+    color: #777;
+    font-size: 54px;
+}
+
+.avatarPreview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.cameraButton {
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border: 3px solid #fafafa;
+    border-radius: 50%;
+    background: #ff0033;
+    color: #fff;
+}
+
+.cameraButton svg {
+    width: 17px;
+    height: 17px;
+}
+
+.logoCopy {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.logoCopy strong {
+    color: #0f0f0f;
+    font-size: 15px;
+}
+
+.logoCopy span {
+    margin: 5px 0 12px;
+    color: #737373;
+    font-size: 13px;
+}
+
+.uploadButton {
+    display: inline-flex;
+    height: 38px;
+    align-items: center;
+    border: 1px solid #d8d8d8;
+    border-radius: 6px;
+    background: #fff;
+    padding: 0 14px;
+    color: #1f1f1f;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.uploadButton:hover {
+    background: #f2f2f2;
+}
+
+.formGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+    padding: 0 28px 28px;
+}
+
+.field {
+    display: grid;
+    min-width: 0;
+    gap: 8px;
+    color: #222;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.field:last-child {
+    grid-column: 1 / -1;
+}
+
+.field input,
+.field select,
+.field textarea {
+    width: 100%;
+    border: 1px solid #d8d8d8;
+    border-radius: 6px;
+    background: #fff;
+    color: #0f0f0f;
+    outline: none;
+    font-size: 14px;
+    font-weight: 400;
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.field input,
+.field select {
+    height: 46px;
+    padding: 0 13px;
+}
+
+.field textarea {
+    min-height: 124px;
+    resize: vertical;
+    padding: 12px 13px;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus,
+.handleInput:focus-within {
+    border-color: #ff0033;
+    box-shadow: 0 0 0 3px rgba(255, 0, 51, 0.09);
+}
+
+.field small {
+    justify-self: end;
+    color: #8a8a8a;
+    font-size: 12px;
+    font-weight: 400;
+}
+
+.handleInput {
+    display: flex;
+    height: 46px;
+    align-items: center;
+    border: 1px solid #d8d8d8;
+    border-radius: 6px;
+    background: #fff;
+}
+
+.handleInput b {
+    padding-left: 13px;
+    color: #777;
+    font-size: 14px;
+}
+
+.handleInput input {
+    height: 44px;
+    border: 0;
+    padding-left: 4px;
+}
+
+.handleInput input:focus {
+    border: 0;
+    box-shadow: none;
+}
+
+.formActions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 18px 28px;
+    border-top: 1px solid #ededed;
+    background: #fafafa;
+}
+
+.cancelButton,
+.submitButton {
+    display: inline-flex;
+    height: 42px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    padding: 0 18px;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.cancelButton {
+    color: #606060;
+}
+
+.cancelButton:hover {
+    background: #ededed;
+}
+
+.submitButton {
+    border: 0;
+    background: #ff0033;
+    color: #fff;
+}
+
+.submitButton:hover:not(:disabled) {
+    background: #d9002b;
+}
+
+.submitButton:disabled {
+    cursor: wait;
+    opacity: 0.55;
+}
+
+@media (max-width: 640px) {
+    .pageWrap {
+        width: min(100% - 20px, 760px);
+        padding-top: 20px;
+    }
+
+    .formHeader {
+        align-items: flex-start;
+        padding: 20px;
+    }
+
+    .headerIcon {
+        flex-basis: 42px;
+        width: 42px;
+        height: 42px;
+        font-size: 22px;
+    }
+
+    .formHeader h1 {
+        font-size: 20px;
+    }
+
+    .errorMessage {
+        margin-inline: 20px;
+    }
+
+    .logoSection {
+        align-items: flex-start;
+        margin: 20px;
+        padding: 18px;
+    }
+
+    .logoPicker,
+    .avatarPreview {
+        flex-basis: 82px;
+        width: 82px;
+        height: 82px;
+    }
+
+    .avatarPreview {
+        font-size: 40px;
+    }
+
+    .logoCopy span {
+        line-height: 1.4;
+    }
+
+    .formGrid {
+        grid-template-columns: 1fr;
+        padding: 0 20px 20px;
+    }
+
+    .field:last-child {
+        grid-column: auto;
+    }
+
+    .formActions {
+        padding: 14px 20px;
+    }
+
+    .cancelButton,
+    .submitButton {
+        flex: 1;
+    }
+}
+
+@media (max-width: 420px) {
+    .logoSection {
+        align-items: center;
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .logoCopy {
+        align-items: center;
+    }
+}
