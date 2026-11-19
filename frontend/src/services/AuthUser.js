@@ -42,16 +42,26 @@ export const AuthLoginUser = async (payload) => {
     }
 };
 
-export const checkAlreadyLogin = async () => {
+export const logoutUser = async () => {
     try {
-        const checkLoginApi = `${process.env.NEXT_PUBLIC_API_URL}${process.env.NEXT_PUBLIC_AUTH_API_PATH}refresh-token`;
-        const response = await axios.post(checkLoginApi,{}, { withCredentials: true });
+        const logoutApi = `${process.env.NEXT_PUBLIC_API_URL}${process.env.NEXT_PUBLIC_AUTH_API_PATH}logout`;
+
+        // http://localhost:1111/api/auth/logout
+        const response = await axios.post(logoutApi, {}, { withCredentials: true });
+        console.log("Response from logout API :: ", response.data);
         return response.data;
     } catch (error) {
-        console.log(
-            "Check login failed:",
-            error.response?.data || error.message
-        );
+        console.error("Logout failed:", error.response?.data || error.message);
         throw error;
     }
+};
+
+export const checkAlreadyLogin = async () => {
+    const checkLoginApi = `${process.env.NEXT_PUBLIC_API_URL}${process.env.NEXT_PUBLIC_AUTH_API_PATH}refresh-token`;
+    const response = await axios.post(checkLoginApi, {}, { withCredentials: true });
+    console.log("Response from checkAlreadyLogin API :: ", response);
+    if (response?.data?.success) {
+        return response.data;
+    }
+    return { success: false, message: "User is not logged in" };
 };

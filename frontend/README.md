@@ -86,3 +86,6 @@ http://localhost:1111/api/auth/videos/6afd3de4d084ce9e15d88d6e
 12: for like and unlike
 /api/auth/videos/:id/like
 http://localhost:1111/api/auth/videos/6afd5067b8b1c2481c712e80/like
+
+13: to get the my channel but it is only and only valid when the user is login
+http://localhost:1111/api/auth/channels/me

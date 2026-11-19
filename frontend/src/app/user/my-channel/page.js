@@ -6,6 +6,8 @@ import Link from "next/link";
 import { MdAdd, MdAnalytics, MdBarChart, MdCheckCircle, MdEdit, MdGridView, MdMoreVert, MdNotificationsNone, MdOutlineVideoLibrary, MdSearch, MdVideoCameraBack, MdViewList, MdVisibility, } from "react-icons/md";
 import api from "@/services/api";
 import styles from "@/components/styleSheets/my-channel.module.css";
+import { checkAlreadyLogin } from "@/services/AuthUser";
+import { getMyChannel } from "@/services/channel.services";
 
 const demoVideos = [
     { id: 1, title: "Building a modern dashboard from scratch", views: "48K", age: "2 days ago", duration: "12:48", comments: 184, likes: "3.8K", accent: "#315b9b" },
@@ -24,11 +26,33 @@ export default function MyChannelPage() {
     const [view, setView] = useState("grid");
 
     useEffect(() => {
-        api
-            .get("/api/auth/channels/me")
-            .then((response) => setChannel(response.data?.channel || null))
-            .catch(() => setChannel(null))
-            .finally(() => setLoading(false));
+        const checkAuth = async () => {
+            try {
+                const response = await checkAlreadyLogin();
+                if (!response?.success) {
+                    window.location.href = "/login";
+                }
+            } catch (error) {
+                console.error("Error checking authentication:", error);
+                window.location.href = "/login";
+            }
+        };
+        const fetchChannelData = async () => {
+            try {
+                const response = await getMyChannel();
+                setChannel(response);
+                console.log("Fetched channel data:", response);
+            } catch (error) {
+                console.error("Error fetching channel data:", error);
+                window.location.href = "/login";
+            }
+            finally {
+                setLoading(false);
+            }
+        }
+        checkAuth();
+        fetchChannelData();
+
     }, []);
 
     const channelName = channel?.channelName || "Nitin Kumar";

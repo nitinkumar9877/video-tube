@@ -4,30 +4,48 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { MdAdd, MdArrowForward, MdEdit, MdHistory, MdOutlineVideoLibrary, MdSubscriptions, MdVideoCall, } from "react-icons/md";
-import api from "@/services/api";
 import styles from "../../components/styleSheets/userProfile.module.css";
+import { checkAlreadyLogin } from "@/services/AuthUser";
+import { getMyChannel } from "@/services/channel.services";
 
 export default function UserPage() {
     const [user, setUser] = useState(null);
     const [channel, setChannel] = useState(null);
     const [loading, setLoading] = useState(true);
-
     useEffect(() => {
-        try {
-            const savedUser = window.localStorage.getItem("playtube_user");
-            setUser(savedUser ? JSON.parse(savedUser) : null);
-        } catch {
-            setUser(null);
-        }
-    }, []);
+        const initializeUser = async () => {
+            try {
+                // Step 1: Get user data from localStorage
+                const savedUser = window.localStorage.getItem("playtube_user");
 
-    useEffect(() => {
-        
-        api
-            .get("/api/auth/channels/me")
-            .then((response) => setChannel(response.data?.channel || null))
-            .catch(() => setChannel(null))
-            .finally(() => setLoading(false));
+                setUser(savedUser ? JSON.parse(savedUser) : null);
+
+                // Step 2: Check authentication
+                const response = await checkAlreadyLogin();
+
+                if (!response?.success) {
+                    window.location.href = "/login";
+                    return;
+                }
+
+                // Step 3: Fetch channel data after authentication
+                const channelResponse = await getMyChannel();
+
+                setChannel(channelResponse || null);
+
+            } catch (error) {
+                console.error("Error initializing user:", error);
+
+                // window.location.href = "/login";
+                return;
+
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        initializeUser();
+
     }, []);
 
     const displayName = user?.username || user?.name || user?.email?.split("@")[0] || "Your Profile";

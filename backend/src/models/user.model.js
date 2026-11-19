@@ -12,8 +12,8 @@ const userSchema = new mongoose.Schema({
         unique: true
     },
     password: {
-        type: String
-        // required: true //never use because we are using google auth for login and signup
+        type: String,
+        required: true //never use because we are using google auth for login and signup
     },
     profilePictureUrl: {
         type: String,

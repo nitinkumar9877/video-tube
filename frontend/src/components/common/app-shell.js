@@ -8,7 +8,7 @@ import { FaCircleUser } from "react-icons/fa6";
 import styles from "../styleSheets/app-shell.module.css";
 import logo from "@/assets/playTube.webp";
 import { useEffect, useRef, useState } from "react";
-import { checkAlreadyLogin } from "@/services/AuthUser";
+import { checkAlreadyLogin, logoutUser } from "@/services/AuthUser";
 import api from "@/services/api";
 
 const primaryLinks = [
@@ -72,22 +72,69 @@ export default function AppShell({ children }) {
     };
   }, []);
 
+  // useEffect(() => {
+  //   const fetchUser = async () => {
+  //     try {
+  //       const response = await checkAlreadyLogin();
+  //       if (!response?.success) {
+  //         setIsLoggedIn(false);
+  //         return;
+  //       }
+  //       const data = response.data;
+  //       console.log("Data from checkAlreadyLogin API :: ", data);
+  //       if (response?.success) {
+  //         setIsLoggedIn(true);
+  //       }
+  //     } catch {
+  //       setIsLoggedIn(false);
+  //     }
+  //   };
+  //   fetchUser();
+  // },[]);
+
+
   useEffect(() => {
+    let isMounted = true;
+
     const fetchUser = async () => {
       try {
         const response = await checkAlreadyLogin();
+        console.log("----------------------------------------Start-------------------------------------------------");
         console.log("Response from checkAlreadyLogin API :: ", response);
+        console.log("----------------------------------------End-------------------------------------------------");
+
+        if (!isMounted) return;
+
         if (response?.success) {
           setIsLoggedIn(true);
+        } else {
+          setIsLoggedIn(false);
         }
+
       } catch (error) {
-        console.error("Error fetching user:", error);
+        if (!isMounted) return;
+
+        console.log("Fetch user error:", error);
         setIsLoggedIn(false);
       }
     };
 
     fetchUser();
+
+    return () => {
+      isMounted = false;
+    };
+
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+      setIsLoggedIn(false);
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
   const isAuthPage =
     pathname.startsWith("/login") || pathname.startsWith("/register-account");
 
@@ -121,7 +168,7 @@ export default function AppShell({ children }) {
         </div>
 
         <div className={styles.headerActions}>
-          
+
           {isLoggedIn ? (
             <div className={styles.profileMenuWrap} ref={profileMenuRef}>
               <button
@@ -141,16 +188,7 @@ export default function AppShell({ children }) {
                 <button
                   type="button"
                   className={styles.signupButton}
-                  onClick={async () => {
-                    setProfileMenuOpen(false);
-                    try {
-                      await api.post("/api/auth/logout");
-                    } finally {
-                      setIsLoggedIn(false);
-                      router.push("/login");
-                      router.refresh();
-                    }
-                  }}
+                  onClick={handleLogout}
                 >
                   Log out
                 </button>

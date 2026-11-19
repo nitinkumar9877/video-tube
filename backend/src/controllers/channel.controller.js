@@ -8,10 +8,10 @@ const createChannel = async (req, res) => {
         if (!req.body) {
             return res.status(400).json({ error: "Request body is missing" });
         };
-        const { channelName, description, category, channelHandle} = req.body;
+        const { channelName, description, category, channelHandle } = req.body;
         console.log("0");
         const channelLogo = req.file;
-        if(!channelLogo ) {
+        if (!channelLogo) {
             return res.status(400).json({ error: "Channel logo are required" });
         };
         console.log("1");
@@ -26,7 +26,7 @@ const createChannel = async (req, res) => {
         console.log("3");
 
         const { profileImageKey, profileImageUrl } = await putProfileImageObjectS3(channelLogo, `channel-logos/${Date.now()}-${channelLogo.originalname}`);
-        
+
         const channelData = {
             channelName,
             description,
@@ -56,8 +56,11 @@ const createChannel = async (req, res) => {
 
 const getMyChannel = async (req, res) => {
     try {
-        const channelId = req.user.channel?.[0];
+        console.log("---------------- Get My Channel Controller ----------------");
 
+        const channelId = req.user.channel?.[0];
+        console.log("1")
+        console.log("Channel ID:", channelId);
         if (!channelId) {
             return res.status(200).json({
                 success: true,
@@ -69,12 +72,15 @@ const getMyChannel = async (req, res) => {
             _id: channelId,
             owner: req.user._id
         });
-
+        console.log("2")
+        console.log("Channel:", channel);
+        console.log("----- Get My Channel Controller executed successfully -----");
         return res.status(200).json({
             success: true,
-            channel: channel || null
+            data: channel || null
         });
     } catch (error) {
+        console.log("Error in getMyChannel controller");
         printCatchBlockError(error);
         return res.status(500).json({
             success: false,

@@ -12,6 +12,7 @@ const { clearaccessTokenCookie, clearrefreshTokenCookie } = require("../utils/co
 
 const signUp = async (req, res) => {
     try {
+        console.log("------------------ signup controller start here ------------------");
         console.log("1");
         let { email, username, password } = req.body;
         username = req.body.username?.trim();
@@ -240,10 +241,10 @@ const logout = (req, res) => {
     try {
         clearaccessTokenCookie(res);
         clearrefreshTokenCookie(res);
-        res.status(200).json({ message: "Logout successful" });
+        res.status(200).json({ success: true, message: "Logout successful" });
     } catch (error) {
         console.error("Error during logout:", error);
-        res.status(500).json({ message: "Internal server error" });
+        res.status(500).json({ success: false, message: "Internal server error" });
     }
 }
 
