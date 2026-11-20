@@ -2,6 +2,7 @@ const configData = require("../config/environment.config");
 const { clearaccessTokenCookie, clearrefreshTokenCookie } = require("../utils/cookies.utils");
 const jwt = require("jsonwebtoken");
 const userModel = require("../models/user.model.js");
+const TokenModel = require("../models/Token.model.js");
 const { printCatchBlockError } = require("../utils/errorPrint.utils.js");
 
 const accessTokenValidation = async (req, res, next) => {
@@ -49,7 +50,7 @@ const accessTokenValidation = async (req, res, next) => {
         const userId = decoded.userId;
 
         if (!userId) {
-            clearAccessTokenCookie(res);
+            clearaccessTokenCookie(res);
 
             return res.status(401).json({
                 success: false,
@@ -62,7 +63,7 @@ const accessTokenValidation = async (req, res, next) => {
         const user = await userModel.findById(userId);
 
         if (!user) {
-            clearAccessTokenCookie(res);
+            clearaccessTokenCookie(res);
             clearrefreshTokenCookie(res);
 
             return res.status(401).json({
@@ -126,14 +127,37 @@ const refreshTokenValidation = async (req, res, next) => {
     let user;
     try {
         console.log("decodedrefreshToken.id:", decodedrefreshToken.userId);
+        if (!decodedrefreshToken.userId) {
+            clearaccessTokenCookie(res);
+            clearrefreshTokenCookie(res);
+            return res.status(401).json({
+                success: false,
+                message: "Invalid refresh token payload."
+            });
+        }
+
         user = await userModel.findById(decodedrefreshToken.userId);
-        // console.log("User found:", user);
         if (!user) {
             clearaccessTokenCookie(res);
             clearrefreshTokenCookie(res);
             return res.status(401).json({
                 success: false,
                 message: "User not found."
+            });
+        }
+
+        const tokenSession = await TokenModel.findOne({
+            userId: user._id,
+            refreshToken,
+            expiresAt: { $gt: new Date() }
+        });
+
+        if (!tokenSession) {
+            clearaccessTokenCookie(res);
+            clearrefreshTokenCookie(res);
+            return res.status(401).json({
+                success: false,
+                message: "Refresh token session is no longer valid."
             });
         }
     } catch (error) {

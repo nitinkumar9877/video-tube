@@ -42,7 +42,7 @@ API examples:
 - `src/app/page.js`: public home feed
 - `src/app/(auth)/login/page.js`: login
 - `src/app/(auth)/register-account/page.js`: two-step registration
-- `src/app/dashboard/createChannel/page.js`: channel creation
+- `src/app/user/createChannel/page.js`: authenticated channel creation form
 - `src/app/dashboard/upload/page.js`: video and thumbnail upload
 - `src/app/dashboard/videos/page.js`: redirects to home in the current implementation
 - `src/app/dashboard/videos/[id]/page.js`: video player
@@ -52,7 +52,7 @@ API examples:
 - `src/app/user/my-channel/page.js`: channel owner dashboard
 - `src/app/user/history/page.js`: watch history demo
 - `src/app/user/liked/page.js`: liked videos demo
-- `src/app/user/subscriptions/page.js`: subscriptions demo
+- `src/app/user/subscribe/page.js`: Subscribe demo
 - `src/components/common/app-shell.js`: header and sidebar shell
 - `src/components/styleSheets/*.module.css`: page/component CSS modules
 - `src/services/AuthUser.js`: signup, login, logout, and auth refresh
@@ -78,7 +78,7 @@ Authentication pages are detected in `AppShell` and bypass the shell.
 Main navigation:
 
 - `/`: home
-- `/user/subscriptions`
+- `/user/subscribe`
 - `/user/history`
 - `/user/liked`
 - `/settings`
@@ -180,10 +180,15 @@ The current API call is `AuthRegisterUser(payload)`.
 On success, form state is reset and the page redirects to `/`.
 On HTTP 409 or duplicate MongoDB errors, the page attempts to map duplicate email/username to field errors.
 
-Known signup issue:
+Authentication status:
 
-- The page runs `checkAlreadyLogin()` in `useEffect` without an empty dependency array.
-- The signup endpoint has a backend token-payload mismatch; see `Bottleneck.md`.
+- Registration and login `useEffect` auth checks now run once per mounted page.
+- Registration and login both use synchronous in-flight guards to prevent duplicate submissions.
+- Signup and login API calls use a 15-second timeout.
+- Signup duplicate responses are mapped to field-specific email/username errors.
+- Login reads the public user from `response.data.user` or `response.user` for compatibility with the auth service response.
+- Missing refresh sessions return a normal unauthenticated state instead of surfacing as a login-page error.
+- Backend signup token, cookie, duplicate-key, and protected-route mismatches are resolved; see `Bottleneck.md`.
 
 Do not change this flow into a single-step form unless explicitly requested.
 
@@ -209,31 +214,41 @@ The logout call clears backend cookies. The AppShell then sets local login state
 
 `src/app/user/page.js`
 
-- Loads public user data from `localStorage["playtube_user"]`
+- Calls `/api/auth/refresh-token` before fetching profile data; a missing/invalid server-side refresh session redirects to `/login` even if an old cookie remains in the browser.
+- Imports and calls `FetchUserData()` from `src/services/AuthUser.js`, fetches `/api/auth/myProfile`, and reads the user from `response.data.user`.
 - Calls `/api/auth/channels/me`
 - Shows create-channel or channel management links
 - Displays subscriber/video/view values when returned by the backend
+
+Refresh validation requires both a valid refresh JWT cookie and a matching, unexpired `Token` session in MongoDB. Deleting the session revokes the refresh cookie; it must not mint a replacement token.
 
 ### My channel
 
 `src/app/user/my-channel/page.js`
 
-- Fetches `/api/auth/channels/me`
-- Falls back to demo channel values if no channel exists
-- Uses demo videos for the content grid
+- Authenticates before fetching the channel and owned videos.
+- Loads `/api/auth/channels/me` through `getMyChannel()` and `/api/auth/my-videos` through `getMyVideos()`; both use the credentialed shared API client.
+- `getMyVideos()` normalizes the backend `data` array into a `videos` array.
+- Displays real video count, total views (sum of each owned video's `views`), subscriber count, video metadata, likes, and comments; do not substitute demo metrics when real counts are zero.
+- Zero videos show an upload prompt, zero views show a clear first-view message, and a search with no matches shows a separate empty result state.
+- If no channel exists, show a create-channel prompt instead of rendering undefined channel details.
 - Supports local search and grid/list view toggles
 - Provides links to upload, customize channel, and manage videos
 
-Do not present demo metrics as live API data if adding real API integration.
+The video detail endpoint currently increments `views` for every successful fetch. It is request-based counting, not unique-view analytics.
 
 ### Channel creation
 
-`src/app/dashboard/createChannel/page.js`
+`src/app/user/createChannel/page.js`
 
-- Fetches `/api/auth/channels/me`
-- Shows channel creation or existing-channel state
-- Sends channel name, handle, description, category, and `Image` multipart field
-- After success, sets the created channel state
+- Checks the refresh session, then fetches the current channel; unauthenticated users are sent to `/login`.
+- Uses the credentialed `api` Axios instance for `POST /api/auth/channels`.
+- Sends channel name, handle, description, category, and the `Image` multipart field.
+- Logo types are JPG, PNG, or WebP; maximum size is 5 MB.
+- Handle validation must match the backend service pattern: lowercase letters, digits, and hyphens.
+- If a channel already exists or is created successfully, navigates to `/user/my-channel`.
+
+`src/services/channel.services.js` normalizes `GET /api/auth/channels/me` to include a top-level `channel` property. The backend response contract is `{ success, data: { channel } }`, including when the user has no channel.
 
 Channel handle is generated from channel name but can be manually changed in the form. Existing UI validation follows the backend lowercase letter/number/hyphen pattern.
 
@@ -282,7 +297,7 @@ Several pages use local demo data or fallback values:
 - Home feed: `src/app/page.js`
 - Channel page: `src/app/dashboard/channel/page.js`
 - My-channel dashboard: `src/app/user/my-channel/page.js`
-- Subscriptions, liked videos, history
+- Subscribe, liked videos, history
 - Video player fallback
 
 Do not remove demos unless explicitly replacing a page with real API data. For any API integration, preserve loading/error/empty states and existing route behavior.

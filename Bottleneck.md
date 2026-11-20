@@ -1,5 +1,17 @@
 # Signup Bottlenecks and Recommended Fixes
 
+## Resolution status
+
+Updated on 2026-11-20:
+
+- Signup now uses `{ userId }` JWT payloads, shared access/refresh cookie helpers, and MongoDB duplicate-key handling.
+- Signup creates and stores a refresh-token session, removes only the newly created account if setup fails, and does not log token values.
+- Protected-route middleware typo is fixed, CORS uses `FRONTEND_URL` with localhost fallback, and upload-only environment requirements no longer block auth startup.
+- Registration and login now use stable auth-check effects and synchronous submit guards.
+- Live validation passed: signup `201`, duplicate signup `409`, login `200`, and refresh `200`.
+- Login now unwraps the backend user from `response.data.user` instead of reading a nonexistent `response.user`; this prevents a post-login runtime `TypeError`.
+- `checkAlreadyLogin` now treats `401` refresh responses as a normal unauthenticated state and no longer treats missing cookies as an application error.
+
 ## Scope
 
 This document covers the signup API and the registration page only. The recommended changes are limited to signup/auth behavior and should preserve the existing two-step registration flow and account creation logic.

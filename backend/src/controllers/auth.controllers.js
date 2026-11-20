@@ -11,27 +11,26 @@ const { clearaccessTokenCookie, clearrefreshTokenCookie } = require("../utils/co
 
 
 const signUp = async (req, res) => {
+    let newUser;
+
     try {
-        console.log("------------------ signup controller start here ------------------");
-        console.log("1");
-        let { email, username, password } = req.body;
-        username = req.body.username?.trim();
-        email = req.body.email?.trim().toLowerCase();
-        console.log("2");
+        const username = req.body.username?.trim();
+        const email = req.body.email?.trim().toLowerCase();
+        const { password } = req.body;
 
         if (!username || !email || !password) {
             return res.status(400).json({
+                success: false,
                 message: "All fields are required"
             });
         }
-        console.log("3");
 
         if (!validator.isEmail(email)) {
             return res.status(400).json({
+                success: false,
                 message: "Invalid email format"
             });
         }
-        console.log("4");
 
         if (!validator.isStrongPassword(password, {
             minLength: 8,
@@ -45,101 +44,83 @@ const signUp = async (req, res) => {
                 message: "Password must contain uppercase, lowercase, number and symbol"
             });
         }
-        console.log("5");
 
         const existingUser = await userModel.findOne({
-            $or: [
-                { email },
-                { username }
-            ]
+            $or: [{ email }, { username }]
         });
-        console.log("6");
 
         if (existingUser) {
             return res.status(409).json({
                 success: false,
-                message: "Username or email already exists"
+                message: existingUser.email === email
+                    ? "Email already exists"
+                    : "Username already exists",
+                keyPattern: {
+                    [existingUser.email === email ? "email" : "username"]: 1
+                }
             });
         }
-        console.log("7");
-
-        // if (!req.file) {
-        //     return res.status(400).json({
-        //         success: false,
-        //         message: "Profile picture is required"
-        //     });
-        // }
-
-        // const uploadedImage = await imagekit.upload({
-        //     file: req.file.buffer,
-        //     fileName: req.file.originalname,
-        //     folder: "/profile-pictures",
-        //     useUniqueFileName: true
-        // });
-        // if (!uploadedImage.url) {
-        //     throw new Error("ImageKit did not return an image URL");
-        // }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        console.log("8");
-
-        const newUser = await userModel.create({
+        newUser = await userModel.create({
             username,
             email,
-            password: hashedPassword,
-            // profilePictureUrl: uploadedImage.url
+            password: hashedPassword
         });
 
-        console.log("9");
-
-        const { accessToken, refreshToken } = generateToken({
-            id: newUser._id
-        });
-        console.log("9-b");
-        console.log("Access Token:", accessToken);
-        console.log("Refresh Token:", refreshToken);
-        console.log("9-c");
-        if (!accessToken || !refreshToken) {
+        const tokens = generateToken({ userId: newUser._id });
+        if (!tokens?.accessToken || !tokens.refreshToken) {
+            await userModel.deleteOne({ _id: newUser._id });
+            newUser = null;
             throw new Error("Token generation failed");
         }
 
-        console.log("10");
+        const { accessToken, refreshToken } = tokens;
+        const sessionId = new mongoose.Types.ObjectId();
 
-        res.cookie("refreshToken", refreshToken, {
-            httpOnly: true,
-            secure: false, // Set to true in production
-            sameSite: "lax",
-            maxAge: 7 * 24 * 60 * 60 * 1000
+        await TokenModel.create({
+            _id: sessionId,
+            userId: newUser._id,
+            refreshToken,
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            userAgent: req.get("user-agent") || null,
+            ipAddress: req.ip
         });
 
-        res.cookie("accessToken", accessToken, {
-            httpOnly: true,
-            secure: false, // Set to true in production
-            sameSite: "lax",
-            maxAge: 5 * 60 * 1000
-        });
-        console.log("11");
+        setaccessTokenCookie(res, accessToken);
+        setrefreshTokenCookie(res, refreshToken);
 
         return res.status(201).json({
             success: true,
             message: "User created successfully",
             user: {
-                id: newUser._id,
+                _id: newUser._id,
                 username: newUser.username,
                 email: newUser.email,
                 profilePictureUrl: newUser.profilePictureUrl
             }
         });
     } catch (error) {
-        console.log("------------------ signup error catch block ------------------");
-        console.error("Signup Error:", error);
+        if (error?.code === 11000) {
+            const duplicateField = Object.keys(error.keyPattern || {})[0];
+            return res.status(409).json({
+                success: false,
+                message: duplicateField
+                    ? `${duplicateField === "email" ? "Email" : "Username"} already exists`
+                    : "Username or email already exists",
+                code: 11000,
+                keyPattern: error.keyPattern || {}
+            });
+        }
 
+        if (newUser?._id) {
+            await userModel.deleteOne({ _id: newUser._id }).catch(() => { });
+        }
+
+        console.error("Signup Error:", error.message);
         return res.status(500).json({
             success: false,
-            message: "Signup failed",
-            error: process.env.NODE_ENV === "development"
-                ? error.message
-                : undefined
+            message: "Signup failed"
         });
     }
 };
@@ -188,9 +169,11 @@ const login = async (req, res) => {
         console.log("7");
 
         // Generate access and refresh tokens
-        const { accessToken, refreshToken } = generateToken({
-            userId: user._id
-        });
+        const tokens = generateToken({ userId: user._id });
+        if (!tokens?.accessToken || !tokens.refreshToken) {
+            throw new Error("Token generation failed");
+        }
+        const { accessToken, refreshToken } = tokens;
         console.log("8");
         console.log("9");
 
@@ -217,11 +200,11 @@ const login = async (req, res) => {
             success: true,
             message: "Login successful",
             data: {
-                accessToken: accessToken,
                 user: {
                     _id: user._id,
                     username: user.username,
-                    email: user.email
+                    email: user.email,
+                    profilePictureUrl: user.profilePictureUrl
                 }
             }
         });
@@ -263,10 +246,12 @@ const refreshToken = async (req, res) => {
                 userAgent: req.get("user-agent") || null
             });
         }
-        const { accessToken, refreshToken } = generateToken({ userId: user._id });
+        const tokens = generateToken({ userId: user._id });
+        if (!tokens?.accessToken || !tokens.refreshToken) {
+            throw new Error("Token generation failed");
+        }
+        const { accessToken, refreshToken } = tokens;
         console.log("New tokens generated successfully");
-        console.log("New Access Token:", accessToken);
-        console.log("New Refresh Token:", refreshToken);
         console.log("1");
         setrefreshTokenCookie(res, refreshToken);
         console.log("2");
@@ -299,4 +284,35 @@ const refreshToken = async (req, res) => {
     }
 }
 
-module.exports = { signUp, login, logout, refreshToken };
+const myProfile = async (req, res) => {
+    try {
+        const user = req.user; // Assuming user is attached to req in middleware
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+        return res.status(200).json({
+            success: true,
+            message: "User profile fetched successfully",
+            data: {
+                user: {
+                    _id: user._id,
+                    username: user.username,
+                    email: user.email,
+                    profilePictureUrl: user.profilePictureUrl
+                }
+            }
+
+        });
+    } catch (error) {
+        console.error("Error fetching user profile:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
+    }
+};
+
+module.exports = { signUp, login, logout, refreshToken, myProfile };

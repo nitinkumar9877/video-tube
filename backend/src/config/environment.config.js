@@ -17,44 +17,8 @@ if (!process.env.JWT_ACCESS_SECRET) {
     throw new Error("JWT_ACCESS_SECRET is not defined in the environment variables");
 }
 
-if (!process.env.IMAGEKIT_URL_ENDPOINT_URL) {
-    throw new Error("IMAGEKIT_URL_ENDPOINT_URL is not defined in the environment variables");
-}
-
-if (!process.env.IMAGEKIT_PUBLIC_KEY) {
-    throw new Error("IMAGEKIT_PUBLIC_KEY is not defined in the environment variables");
-}
-
-if (!process.env.IMAGEKIT_PRIVATE_KEY) {
-    throw new Error("IMAGEKIT_PRIVATE_KEY is not defined in the environment variables");
-}
-
 if (!process.env.NODE_ENV) {
     throw new Error("NODE_ENV is not defined in the environment variables");
-}
-
-if (!process.env.CLOUDFLARE_API_TOKEN) {
-    throw new Error("CLOUDFLARE_API_TOKEN is not defined in the environment variables");
-}
-
-if (!process.env.CLOUDFLARE_ACCOUNT_ID) {
-    throw new Error("CLOUDFLARE_ACCOUNT_ID is not defined in the environment variables");
-}
-
-if (!process.env.AWS_ACCESS_KEY_ID) {
-    throw new Error("AWS_ACCESS_KEY_ID is not defined in the environment variables");
-}
-
-if (!process.env.AWS_SECRET_ACCESS_KEY) {
-    throw new Error("AWS_SECRET_ACCESS_KEY is not defined in the environment variables");
-}
-
-if (!process.env.AWS_BUCKET_NAME) {
-    throw new Error("AWS_BUCKET_NAME is not defined in the environment variables");
-}
-
-if (!process.env.AWS_REGION) {
-    throw new Error("AWS_REGION is not defined in the environment variables");
 }
 
 const configData = {

@@ -1,18 +1,18 @@
-// http://localhost:1111/api/auth/channels/me
-import axios from "axios";
+import api from "@/services/api";
+
 export const getMyChannel = async () => {
     try {
-        const myChannelApi = `${process.env.NEXT_PUBLIC_API_URL}${process.env.NEXT_PUBLIC_AUTH_API_PATH}channels/me`;
-        const response = await axios.get(myChannelApi, {}, {
-            credentials: "true",
-        });
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        };
-        console.log("My Channel Data:", response.data);
-        return response.data;
+        const response = await api.get("/api/auth/channels/me");
+        const responseData = response.data;
+        const channel = responseData.data?.channel ?? null;
+
+        return { ...responseData, channel };
     } catch (error) {
         console.error("Error fetching my channel:", error);
-        throw error;
+        return {
+            success: false,
+            channel: null,
+            message: error.response?.data?.message || "Failed to fetch channel data"
+        };
     }
 };

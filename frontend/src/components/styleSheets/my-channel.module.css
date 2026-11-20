@@ -344,6 +344,15 @@
   background: repeating-linear-gradient(to bottom, #fff 0 40px, #f0f0f0 40px 41px);
 }
 
+.chartEmpty {
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  color: #606060;
+  font-size: 13px;
+  text-align: center;
+}
+
 .chartColumn {
   height: 100%;
   display: flex;

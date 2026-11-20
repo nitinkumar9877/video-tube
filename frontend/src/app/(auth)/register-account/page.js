@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -141,7 +141,8 @@ const RegisterNewUser = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [successMessage, setSuccessMessage] = useState("");
-    
+    const submitInProgress = useRef(false);
+
     useEffect(() => {
         const fetchUser = async () => {
             try {
@@ -156,7 +157,7 @@ const RegisterNewUser = () => {
         };
 
         fetchUser();
-    });
+    }, [router]);
 
     // Handle input changes
     const handleInputChange = (e) => {
@@ -199,7 +200,7 @@ const RegisterNewUser = () => {
     const handleCreateAccount = async (e) => {
         e.preventDefault();
 
-        if (isLoading) return;
+        if (isLoading || submitInProgress.current) return;
 
         // Validate basic information
         const basicErrors = validateBasicInfo(formData);
@@ -219,6 +220,7 @@ const RegisterNewUser = () => {
         }
 
         try {
+            submitInProgress.current = true;
             setIsLoading(true);
             setErrors({});
             setSuccessMessage("");
@@ -247,12 +249,25 @@ const RegisterNewUser = () => {
 
                 throw apiError;
             }
+            const dataForLocalStorage = {
+                _id : response.user._id,
+                username: response.user.username,
+                email: response.user.email,
+                profilePictureUrl: response.user.profilePictureUrl || null,
+            };
 
+            if (responseData?.success) {
+                localStorage.setItem(
+                    "playtube_user",
+                    JSON.stringify(dataForLocalStorage)
+                );
+            }
             console.log("Registration successful:", responseData);
 
             setFormData(INITIAL_FORM_DATA);
             setStep(1);
             setShowPassword(false);
+
             router.push("/");
 
         } catch (error) {
@@ -277,6 +292,7 @@ const RegisterNewUser = () => {
             }
 
         } finally {
+            submitInProgress.current = false;
             setIsLoading(false);
         }
     };

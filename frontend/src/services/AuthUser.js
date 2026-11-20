@@ -1,21 +1,12 @@
 import axios from "axios";
 
 export const AuthRegisterUser = async (payload) => {
-
-    // 3: Register a user
-    // http://localhost:1111/api/auth/register-user
-    // {
-    //     "username":"Hello21",
-    //     "email":"hello123@gmail.com",
-    //     "password":"Hello12345@"
-    // }
-
     try {
-
         const registeredUserApi = `${process.env.NEXT_PUBLIC_API_URL}${process.env.NEXT_PUBLIC_AUTH_API_PATH}register-user`;
-        // console.log("Registered User API :: ", registeredUserApi);
-        // console.log("Payload :: ", payload);
-        const response = await axios.post(registeredUserApi, payload, { withCredentials: true });
+        const response = await axios.post(registeredUserApi, payload, {
+            withCredentials: true,
+            timeout: 15000
+        });
         console.log("Response from register user API :: ", response.data);
         return response.data;
     } catch (error) {
@@ -31,7 +22,10 @@ export const AuthLoginUser = async (payload) => {
     try {
         const loginUserApi = `${process.env.NEXT_PUBLIC_API_URL}${process.env.NEXT_PUBLIC_AUTH_API_PATH}login`;
 
-        const response = await axios.post(loginUserApi, payload, { withCredentials: true });
+        const response = await axios.post(loginUserApi, payload, {
+            withCredentials: true,
+            timeout: 15000
+        });
         return response.data;
     } catch (error) {
         console.log(
@@ -58,10 +52,42 @@ export const logoutUser = async () => {
 
 export const checkAlreadyLogin = async () => {
     const checkLoginApi = `${process.env.NEXT_PUBLIC_API_URL}${process.env.NEXT_PUBLIC_AUTH_API_PATH}refresh-token`;
-    const response = await axios.post(checkLoginApi, {}, { withCredentials: true });
-    console.log("Response from checkAlreadyLogin API :: ", response);
-    if (response?.data?.success) {
-        return response.data;
+
+    try {
+        const response = await axios.post(checkLoginApi, {}, {
+            withCredentials: true,
+            timeout: 15000
+        });
+
+        if (response?.data?.success) {
+            return response.data;
+        }
+    } catch (error) {
+        if (error.response?.status === 401) {
+            return { success: false, message: "User is not logged in" };
+        }
+        throw error;
     }
+
     return { success: false, message: "User is not logged in" };
+};
+
+export const FetchUserData = async () => {
+    const fetchUserApi = `${process.env.NEXT_PUBLIC_API_URL}${process.env.NEXT_PUBLIC_AUTH_API_PATH}myProfile`;
+
+    try {
+        const response = await axios.get(fetchUserApi, {
+            withCredentials: true,
+            timeout: 15000
+        });
+
+        if (response?.data?.success) {
+            return response.data;
+        }
+    } catch (error) {
+        console.error("Fetching user data failed:", error.response?.data || error.message);
+        return { success: false };
+    }
+
+    return null;
 };

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -22,6 +22,7 @@ const LoginPage = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [errors, setErrors] = useState({});
+    const submitInProgress = useRef(false);
 
     useEffect(() => {
         const fetchUser = async () => {
@@ -37,7 +38,7 @@ const LoginPage = () => {
         };
 
         fetchUser();
-    });
+    }, [router]);
 
     // Handle input changes
     const handleInputChange = (e) => {
@@ -82,8 +83,10 @@ const LoginPage = () => {
         e.preventDefault();
 
         if (!validateForm()) return;
+        if (isLoading || submitInProgress.current) return;
 
         try {
+            submitInProgress.current = true;
             setIsLoading(true);
             setErrors({});
 
@@ -93,14 +96,22 @@ const LoginPage = () => {
             });
 
             console.log("Login successful:", response);
+
             const loggedInUser =
-                response.data?.user || response.user || null;
-            if (loggedInUser) {
+                response?.data?.user || response?.user || null;
+
+            if (response?.success && loggedInUser) {
                 localStorage.setItem(
                     "playtube_user",
-                    JSON.stringify(loggedInUser)
+                    JSON.stringify({
+                        _id: loggedInUser._id,
+                        username: loggedInUser.username,
+                        email: loggedInUser.email,
+                        profilePictureUrl: loggedInUser.profilePictureUrl || null,
+                    })
                 );
             }
+
             router.push("/user"); // Redirect to the home page after successful login
             // Add your redirect logic here.
             // Example: router.push("/");
@@ -117,6 +128,7 @@ const LoginPage = () => {
                     "Invalid email or password. Please try again.",
             });
         } finally {
+            submitInProgress.current = false;
             setIsLoading(false);
         }
     };

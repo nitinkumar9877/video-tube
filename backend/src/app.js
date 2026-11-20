@@ -6,8 +6,18 @@ const authRoutes = require("./routes/post.routes.js");
 
 const app = express();
 
+const allowedOrigins = (process.env.FRONTEND_URL || "http://localhost:3000")
+    .split(",")
+    .map((origin) => origin.trim());
+
 app.use(cors({
-    origin: "http://localhost:3000",
+    origin(origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+            return;
+        }
+        callback(new Error("Origin not allowed by CORS"));
+    },
     credentials: true
 }));
 app.use(express.json());

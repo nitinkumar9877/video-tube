@@ -156,16 +156,15 @@ Validation status: `400`
 
 Unexpected status: `500`
 
-Known signup defects:
+Authentication status:
 
-- Signup generates `{ id: newUser._id }`, but auth middleware expects `{ userId }`.
-- Signup sets cookies directly instead of using shared cookie helpers.
-- Signup does not create a refresh-token database session.
-- Duplicate checking has a MongoDB race; insert duplicate-key errors are not mapped to 409.
-- Account creation occurs before token generation.
-- Access and refresh JWT values are logged.
-
-The intended narrow fix is documented in `Bottleneck.md`: pass `userId`, reuse cookie helpers, map `11000`, remove token logs, and add only a simple token null check.
+- Signup now generates `{ userId: newUser._id }`, matching login, refresh, and middleware behavior.
+- Signup reuses the shared access/refresh cookie helpers and creates a refresh-token database session.
+- Signup maps MongoDB duplicate-key `11000` errors to `409` and removes a partially created account when later setup fails.
+- Token generation has null checks, and access/refresh token values are not logged by signup or refresh flows.
+- Access middleware typo and environment-over-validation issues are resolved.
+- The login response exposes public user fields under `data.user`; access and refresh tokens remain in HttpOnly cookies.
+- Live validation passed for signup `201`, duplicate signup `409`, login `200`, and refresh `200`; details are in `Bottleneck.md`.
 
 Do not change signup into a login implementation or add email verification unless separately requested.
 
@@ -203,6 +202,10 @@ Invalid credentials return `401`.
 The middleware and controller use `decoded.userId` and `userId` on `Token` records.
 Signup must match this same token shape.
 
+Refresh middleware also requires a matching, unexpired `Token` record for the exact refresh cookie. A valid JWT whose database session has been deleted is rejected with `401` and both auth cookies are cleared; the refresh controller must not mint replacement tokens for revoked sessions.
+
+The authenticated profile endpoint is `GET /api/auth/myProfile`. Its response shape is `{ success, data: { user } }` to match the frontend profile page.
+
 ### Logout
 
 Clears access and refresh cookies using cookie helper functions.
@@ -236,7 +239,7 @@ Signup currently bypasses these helpers and should be updated to use them.
 - Assigns `req.user`
 - Continues to protected controller
 
-Known typo: one invalid-payload branch calls `clearAccessTokenCookie` but the helper is named `clearaccessTokenCookie`. This branch should be corrected before assuming all invalid tokens are handled safely.
+Invalid-payload and user-not-found branches now call the correctly named `clearaccessTokenCookie` helper.
 
 ### Refresh token middleware
 
@@ -283,6 +286,10 @@ Do not return password or refresh-token fields in public responses.
 
 ### Channel
 
+Channel creation is `POST /api/auth/channels`, protected by access-token validation and `uploadImage` middleware. The multipart image field is exactly `Image`; accepted types are JPEG, PNG, and WebP, up to 5 MB. The frontend handle format is lowercase letters, digits, and hyphens, matching `createChannelService` validation.
+
+`GET /api/auth/channels/me` returns `{ success: true, data: { channel } }`; `data.channel` is `null` when the user has not created a channel. Keep this response shape consistent for both cases. The frontend channel service also normalizes the response for existing consumers.
+
 File: `src/models/channel.model.js`
 
 Fields:
@@ -297,6 +304,10 @@ Fields:
 - `subscribersCount`
 - `totalVideos`
 - `totalViews`
+
+### Video metrics
+
+`GET /api/auth/my-videos` returns the authenticated user's video array in `data` and its count in `totalVideos`. `GET /api/auth/videos/:id` atomically increments the video's `views` field when the video is found, then returns the updated video. This counts successful detail requests, not unique viewers. The frontend my-channel page calculates total views by summing those per-video values and renders real zero counts without demo fallbacks.
 - timestamps
 
 ### Video

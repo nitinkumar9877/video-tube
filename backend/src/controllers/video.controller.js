@@ -207,7 +207,11 @@ const getVideo = async (req, res) => {
     try {
         console.log("------------getVideo controller called------------");
         const videoId = req.params.id;
-        const video = await VideoModel.findById(videoId).populate("owner", "username").populate("channel", "name");
+        const video = await VideoModel.findByIdAndUpdate(
+            videoId,
+            { $inc: { views: 1 } },
+            { new: true }
+        ).populate("owner", "username").populate("channel", "name");
         if (!video) {
             return res.status(404).json({
                 success: false,

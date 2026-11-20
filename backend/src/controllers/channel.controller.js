@@ -6,22 +6,22 @@ const createChannel = async (req, res) => {
     try {
         console.log("---------------- Channel Controller ----------------");
         if (!req.body) {
-            return res.status(400).json({ error: "Request body is missing" });
+            return res.status(400).json({ success: false, error: "Request body is missing" });
         };
         const { channelName, description, category, channelHandle } = req.body;
         console.log("0");
         const channelLogo = req.file;
         if (!channelLogo) {
-            return res.status(400).json({ error: "Channel logo are required" });
+            return res.status(400).json({ success: false, error: "Channel logo are required" });
         };
         console.log("1");
         const userId = req.user._id; // Assuming you have user authentication and the user ID is available in req.user
         if (!userId) {
-            return res.status(401).json({ error: "Unauthorized" });
+            return res.status(401).json({ success: false, error: "Unauthorized" });
         }
         console.log("2");
         if (!channelName || !description || !category || !channelHandle) {
-            return res.status(400).json({ error: "Missing required fields" });
+            return res.status(400).json({ success: false, error: "Missing required fields" });
         }
         console.log("3");
 
@@ -64,7 +64,7 @@ const getMyChannel = async (req, res) => {
         if (!channelId) {
             return res.status(200).json({
                 success: true,
-                channel: null
+                data: { channel: null }
             });
         }
 
@@ -75,10 +75,18 @@ const getMyChannel = async (req, res) => {
         console.log("2")
         console.log("Channel:", channel);
         console.log("----- Get My Channel Controller executed successfully -----");
+        if (!channel) {
+            return res.status(404).json({
+                success: false,
+                message: "Channel not found"
+            });
+        };
+
         return res.status(200).json({
             success: true,
-            data: channel || null
+            data: { channel }
         });
+
     } catch (error) {
         console.log("Error in getMyChannel controller");
         printCatchBlockError(error);

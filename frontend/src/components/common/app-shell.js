@@ -13,7 +13,7 @@ import api from "@/services/api";
 
 const primaryLinks = [
   { label: "Home", href: "/", icon: MdHome },
-  { label: "Subscriptions", href: "/user/subscriptions", icon: MdSubscriptions },
+  { label: "Subscribe", href: "/user/subscribe", icon: MdSubscriptions },
   { label: "History", href: "/user/history", icon: MdHistory },
 ];
 

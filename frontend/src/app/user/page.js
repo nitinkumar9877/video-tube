@@ -1,14 +1,15 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { MdAdd, MdArrowForward, MdEdit, MdHistory, MdOutlineVideoLibrary, MdSubscriptions, MdVideoCall, } from "react-icons/md";
 import styles from "../../components/styleSheets/userProfile.module.css";
-import { checkAlreadyLogin } from "@/services/AuthUser";
+import { checkAlreadyLogin, FetchUserData } from "@/services/AuthUser";
 import { getMyChannel } from "@/services/channel.services";
 
 export default function UserPage() {
+    const router = useRouter();
     const [user, setUser] = useState(null);
     const [channel, setChannel] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -16,27 +17,36 @@ export default function UserPage() {
         const initializeUser = async () => {
             try {
                 // Step 1: Get user data from localStorage
-                const savedUser = window.localStorage.getItem("playtube_user");
-
-                setUser(savedUser ? JSON.parse(savedUser) : null);
+                // cancel because we fetch user data from backend instead of localStorage
 
                 // Step 2: Check authentication
                 const response = await checkAlreadyLogin();
 
                 if (!response?.success) {
-                    window.location.href = "/login";
+                    router.replace("/login");
                     return;
                 }
+                const userData = await FetchUserData(); // Fetch user data from the backend
+                if (!userData?.success) {
+                    router.replace("/login");
+                    return;
+                }
+                setUser(userData.data.user);
 
                 // Step 3: Fetch channel data after authentication
                 const channelResponse = await getMyChannel();
-
-                setChannel(channelResponse || null);
+                if (!channelResponse?.success) {
+                    console.error("Failed to fetch channel data:", channelResponse?.message || "Unknown error");
+                    setChannel(null);
+                    return;
+                } else {
+                    setChannel(channelResponse.channel);
+                    return;
+                }
 
             } catch (error) {
                 console.error("Error initializing user:", error);
-
-                // window.location.href = "/login";
+                setChannel(null);
                 return;
 
             } finally {
@@ -46,7 +56,7 @@ export default function UserPage() {
 
         initializeUser();
 
-    }, []);
+    }, [router]);
 
     const displayName = user?.username || user?.name || user?.email?.split("@")[0] || "Your Profile";
     const initials = displayName
@@ -96,19 +106,19 @@ export default function UserPage() {
                         ) : channel ? (
                             <>
                                 <Link
-                                    href="/dashboard/channel"
+                                    href="/user/my-channel"
                                     className={styles.primaryButton}
                                 >
                                     Go to channel
                                     <MdArrowForward />
                                 </Link>
-                                <Link href="/dashboard/channel" className={styles.secondaryButton}>
+                                {/* <Link href="/user/channel" className={styles.secondaryButton}>
                                     <MdEdit />
                                     Manage
-                                </Link>
+                                </Link> */}
                             </>
                         ) : (
-                            <Link href="/dashboard/createChannel" className={styles.primaryButton}>
+                            <Link href="/user/createChannel" className={styles.primaryButton}>
                                 <MdVideoCall />
                                 Create channel
                             </Link>
@@ -125,7 +135,7 @@ export default function UserPage() {
                             <h2>{channel ? channel.channelName : "Share your creativity"}</h2>
                         </div>
                         {channel && (
-                            <Link href={`/dashboard/channel/${channel._id}`} className={styles.textLink}>
+                            <Link href={`/user/channel/${channel._id}`} className={styles.textLink}>
                                 View channel
                                 <MdArrowForward />
                             </Link>
@@ -161,7 +171,7 @@ export default function UserPage() {
                             </div>
                             <h3>Create a channel</h3>
                             <p>Start uploading videos and build your audience on PlayTube.</p>
-                            <Link href="/dashboard/channel" className={styles.emptyButton}>
+                            <Link href="/user/createChannel" className={styles.emptyButton}>
                                 Get started
                                 <MdArrowForward />
                             </Link>
@@ -173,7 +183,7 @@ export default function UserPage() {
                     <h2>Quick links</h2>
                     {channel && (
                         <>
-                            <Link href="/dashboard/upload" className={styles.quickLink}>
+                            <Link href="/user/my-channel/upload" className={styles.quickLink}>
                                 <span className={styles.quickIcon}>
                                     <MdVideoCall />
                                 </span>
@@ -184,17 +194,17 @@ export default function UserPage() {
                                 <MdArrowForward />
                             </Link>
 
-                            <Link href="/subscriptions" className={styles.quickLink}>
+                            <Link href="/user/subscribe" className={styles.quickLink}>
                                 <span className={styles.quickIcon}>
                                     <MdSubscriptions />
                                 </span>
                                 <span>
-                                    <strong>Subscriptions</strong>
+                                    <strong>Subscribe</strong>
                                     <small>Explore channels</small>
                                 </span>
                                 <MdArrowForward />
                             </Link>
-                            <Link href="/dashboard/videos" className={styles.quickLink}>
+                            <Link href="/user/my-channel/my-videos" className={styles.quickLink}>
                                 <span className={styles.quickIcon}>
                                     <MdOutlineVideoLibrary />
                                 </span>
@@ -206,7 +216,7 @@ export default function UserPage() {
                             </Link>
                         </>
                     )}
-                    <Link href="/history" className={styles.quickLink}>
+                    <Link href="/user/history" className={styles.quickLink}>
                         <span className={styles.quickIcon}>
                             <MdHistory />
                         </span>
