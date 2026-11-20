@@ -11,6 +11,9 @@ Updated on 2026-11-20:
 - Live validation passed: signup `201`, duplicate signup `409`, login `200`, and refresh `200`.
 - Login now unwraps the backend user from `response.data.user` instead of reading a nonexistent `response.user`; this prevents a post-login runtime `TypeError`.
 - `checkAlreadyLogin` now treats `401` refresh responses as a normal unauthenticated state and no longer treats missing cookies as an application error.
+- Create-channel startup/export crash fixed; `channel.controller.js` now exports `createChannel` and `getMyChannel` consistently.
+- Fixed `Cannot read properties of undefined (reading 'push')`: user ownership is stored in `user.channels`, not the nonexistent `user.channel` field. Existing demo1 channel creation returns `201`; duplicate creation returns `409`.
+- Create-channel validation uses `400`, existing channel/handle conflicts use `409`, unauthenticated requests use `401`, and unexpected failures use `500`.
 
 ## Scope
 

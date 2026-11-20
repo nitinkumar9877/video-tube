@@ -161,7 +161,7 @@ export default function MyChannelPage() {
                         <p className={styles.eyebrow}>Creator studio</p>
                         <h1>Channel dashboard</h1>
                     </div>
-                    <Link href="/dashboard/upload" className={styles.uploadButton}>
+                    <Link href="/user/my-channel/upload" className={styles.uploadButton}>
                         <MdVideoCameraBack />
                         Upload video
                     </Link>
@@ -223,10 +223,10 @@ export default function MyChannelPage() {
                                     <p className={styles.eyebrow}>Analytics</p>
                                     <h2>Channel performance</h2>
                                 </div>
-                                <Link href="/dashboard/videos" className={styles.analyticsLink}>
+                                {/* <Link href="/dashboard/videos" className={styles.analyticsLink}>
                                     <MdAnalytics />
                                     View analytics
-                                </Link>
+                                </Link> */}
                             </div>
 
                             <div className={styles.metricsGrid}>
@@ -299,7 +299,7 @@ export default function MyChannelPage() {
                                     <MdOutlineVideoLibrary />
                                     <h3>No videos yet</h3>
                                     <p>Your video list and view counts will appear here after you upload a video.</p>
-                                    <Link href="/dashboard/upload" className={styles.uploadButton}>Upload video</Link>
+                                    <Link href="/user/my-channel/upload" className={styles.uploadButton}>Upload video</Link>
                                 </div>
                             ) : filteredVideos.length ? (
                                 <div className={`${styles.videoCollection} ${view === "list" ? styles.listView : styles.gridView}`}>
@@ -354,14 +354,14 @@ export default function MyChannelPage() {
                                     <h2>Manage channel</h2>
                                 </div>
                             </div>
-                            <Link href="/dashboard/upload" className={styles.actionRow}>
+                            <Link href="/user/my-channel/upload" className={styles.actionRow}>
                                 <span><MdAdd /></span>
                                 <div><strong>Upload a video</strong><small>Share new content</small></div>
                             </Link>
-                            <Link href="/dashboard/videos" className={styles.actionRow}>
+                            {/* <Link href="/dashboard/videos" className={styles.actionRow}>
                                 <span><MdOutlineVideoLibrary /></span>
                                 <div><strong>Manage videos</strong><small>Organize your uploads</small></div>
-                            </Link>
+                            </Link> */}
                         </section>
                     </aside>
                 </section>

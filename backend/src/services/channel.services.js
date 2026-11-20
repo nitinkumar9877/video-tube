@@ -10,6 +10,7 @@ const createChannelService = async (userId, channelData) => {
             description,
             category,
             channelLogo,
+            channelLogoKey,
             channelBanner
         } = channelData;
 
@@ -42,6 +43,10 @@ const createChannelService = async (userId, channelData) => {
             throw new Error("User not found.");
         }
 
+        if (user.channels?.length) {
+            throw new Error("User already has a channel.");
+        }
+
         // 5. Check whether channel handle already exists
         const existingChannel = await channelModel.findOne({
             channelHandle
@@ -59,6 +64,7 @@ const createChannelService = async (userId, channelData) => {
             category,
             owner: user._id,
             channelLogo: channelLogo || "",
+            channelLogoKey: channelLogoKey || "",
             channelBanner: channelBanner || ""
         });
 
@@ -66,7 +72,8 @@ const createChannelService = async (userId, channelData) => {
         await channel.save();
 
         // 8. Add channel ID to user's channel array
-        user.channel.push(channel._id);
+        user.channels = Array.isArray(user.channels) ? user.channels : [];
+        user.channels.push(channel._id);
 
         await user.save();
 

@@ -279,7 +279,8 @@ Fields:
 - `email`: required, unique
 - `password`: required
 - `profilePictureUrl`: default empty string
-- `channel`: array of Channel IDs
+- `channels`: array of owned Channel IDs, default `[]`
+- `subscribedChannels`: array of subscribed Channel IDs, default `[]`
 - timestamps
 
 Do not return password or refresh-token fields in public responses.
@@ -289,6 +290,10 @@ Do not return password or refresh-token fields in public responses.
 Channel creation is `POST /api/auth/channels`, protected by access-token validation and `uploadImage` middleware. The multipart image field is exactly `Image`; accepted types are JPEG, PNG, and WebP, up to 5 MB. The frontend handle format is lowercase letters, digits, and hyphens, matching `createChannelService` validation.
 
 `GET /api/auth/channels/me` returns `{ success: true, data: { channel } }`; `data.channel` is `null` when the user has not created a channel. Keep this response shape consistent for both cases. The frontend channel service also normalizes the response for existing consumers.
+
+Create-channel controller status: missing data/logo/handle returns `400`, missing authentication returns `401`, an existing user channel or duplicate handle returns `409`, and unexpected upload/database failures return `500`. The controller exports `{ createChannel, getMyChannel }`; removing the stale commented duplicate implementation prevents `createChannel is not defined` startup crashes.
+
+Channel ownership must use `user.channels`, not `user.channel`. Channel lookup and video-upload ownership selection now read `channels`, and Mongoose initializes the array as `[]`. Live test with `demo1@gmail.com`: channel creation returned `201`, lookup returned `200`, and duplicate creation returned `409`.
 
 File: `src/models/channel.model.js`
 

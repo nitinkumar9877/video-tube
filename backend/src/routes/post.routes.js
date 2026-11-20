@@ -2,7 +2,7 @@ const { Router } = require("express");
 const authRoutes = Router();
 const { signUp, login, logout, refreshToken, myProfile } = require("../controllers/auth.controllers.js");
 const { accessTokenValidation, refreshTokenValidation } = require("../middleware/auth.middleware.js");
-const { createChannel, getMyChannel } = require("../controllers/channel.controller.js");
+const { createChannel, getMyChannel, getSubscribedChannelsByUser } = require("../controllers/channel.controller.js");
 const { videoUpload, getAllVideos, getVideo, deleteVideo, updateVideoDetails, myVideos, likeVideo } = require("../controllers/video.controller.js");
 const { uploadVideo, uploadImage, uploadVideoAndThumbnail } = require("../middleware/multer.middleware.js");
 
@@ -19,6 +19,7 @@ authRoutes.post('/videos/:key/like', accessTokenValidation, likeVideo); // /api/
 
 authRoutes.get('/myProfile', accessTokenValidation, myProfile);
 authRoutes.get('/channels/me', accessTokenValidation, getMyChannel);
+authRoutes.get('/subscribed-channels', accessTokenValidation, getSubscribedChannelsByUser);
 authRoutes.get('/videos', getAllVideos);
 authRoutes.get('/videos/:id', getVideo);
 authRoutes.get('/my-videos', accessTokenValidation, myVideos); // /api/auth/videos/my-videos

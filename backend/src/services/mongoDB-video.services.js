@@ -7,13 +7,13 @@ const { deleteVideoObjectS3 } = require("./videosS3.services.js");
 const { deleteThumbnailObjectS3 } = require("./imageS3.services.js");
 
 const uploadVideoDataToMongoDB = async (userId, payLoadData) => {
-    const user = await userModel.findById(userId).select("_id channel");
+    const user = await userModel.findById(userId).select("_id channels");
 
     if (!user) {
         throw new Error("User not found");
     }
 
-    const channelId = payLoadData.channelId || user.channel?.[0];
+    const channelId = payLoadData.channelId || user.channels?.[0];
 
     if (!channelId) {
         throw new Error("Create a channel before uploading a video");

@@ -2,17 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import {
-    MdArrowBack,
-    MdCheckCircle,
-    MdClose,
-    MdErrorOutline,
-    MdImage,
-    MdUpload,
-    MdVideoLibrary,
-} from "react-icons/md";
-import api from "@/services/api";
-import styles from "../../../components/styleSheets/uploadVideo.module.css";
+import { useRouter } from "next/navigation";
+import { MdArrowBack, MdCheckCircle, MdClose, MdErrorOutline, MdImage, MdUpload, MdVideoLibrary } from "react-icons/md";
+import { checkAlreadyLogin } from "@/services/AuthUser";
+import { getMyChannel } from "@/services/channel.services";
+import { uploadVideo } from "@/services/videos";
+import styles from "../../../../components/styleSheets/uploadVideo.module.css";
 
 const initialForm = {
     title: "",
@@ -24,10 +19,11 @@ const initialForm = {
     channelId: "",
 };
 
-const VIDEO_LIMIT = 15 * 1024 * 1024;
-const IMAGE_LIMIT = 2 * 1024 * 1024;
+const VIDEO_LIMIT = 5 * 1024 * 1024;
+const IMAGE_LIMIT = 1 * 1024 * 1024;
 
 export default function UploadVideoPage() {
+    const router = useRouter();
     const videoInputRef = useRef(null);
     const thumbnailInputRef = useRef(null);
     const [form, setForm] = useState(initialForm);
@@ -39,23 +35,37 @@ export default function UploadVideoPage() {
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
 
-    useEffect(() => {
-        api
-            .get("/api/auth/channels/me")
-            .then((response) => {
-                const channel = response.data?.channel;
-                if (channel?._id) {
-                    setForm((current) => ({ ...current, channelId: channel._id }));
-                }
-            })
-            .catch(() => null);
-    }, []);
-
     useEffect(() => () => {
         if (videoPreview) URL.revokeObjectURL(videoPreview);
         if (thumbnailPreview) URL.revokeObjectURL(thumbnailPreview);
     }, [videoPreview, thumbnailPreview]);
 
+    const uploadVideoToDb = async (payload) => {
+        const isLoggedInResponse = await checkAlreadyLogin();
+        if (!isLoggedInResponse?.success) {
+            router.push("/login");
+            throw new Error("Please log in before uploading a video.");
+        }
+
+        const isChannelResponse = await getMyChannel();
+        if (!isChannelResponse?.success) {
+            throw new Error(isChannelResponse?.message || "Unable to verify your channel.");
+        }
+
+        if (!isChannelResponse.channel?._id) {
+            router.push("/user/createChannel");
+            throw new Error("Create a channel before uploading a video.");
+        }
+
+        payload.set("channelId", isChannelResponse.channel._id);
+        const uploadVideoResponse = await uploadVideo(payload);
+        if (!uploadVideoResponse?.success) {
+            throw new Error(uploadVideoResponse?.message || "Failed to upload video.");
+        }
+        router.push("/user/my-channel");
+
+        return uploadVideoResponse;
+    };
     const updateField = (event) => {
         const { name, value } = event.target;
         setForm((current) => ({ ...current, [name]: value }));
@@ -74,7 +84,7 @@ export default function UploadVideoPage() {
         }
 
         if (file.size > VIDEO_LIMIT) {
-            setError("Video size must be 15 MB or less.");
+            setError("Video size must be 5 MB or less.");
             event.target.value = "";
             return;
         }
@@ -96,7 +106,7 @@ export default function UploadVideoPage() {
         }
 
         if (file.size > IMAGE_LIMIT) {
-            setError("Thumbnail size must be 2 MB or less.");
+            setError("Thumbnail size must be 1 MB or less.");
             event.target.value = "";
             return;
         }
@@ -168,9 +178,7 @@ export default function UploadVideoPage() {
             formData.append("video", videoFile);
             formData.append("thumbnailImage", thumbnailFile);
 
-            await api.post("/api/auth/channels/upload-video", formData, {
-                headers: { "Content-Type": "multipart/form-data" },
-            });
+            await uploadVideoToDb(formData);
 
             setSuccess("Your video was uploaded successfully.");
             setForm(initialForm);
@@ -180,6 +188,7 @@ export default function UploadVideoPage() {
             setError(
                 requestError.response?.data?.message ||
                 requestError.response?.data?.error ||
+                requestError.message ||
                 "Unable to upload the video. Please try again."
             );
         } finally {
@@ -214,7 +223,7 @@ export default function UploadVideoPage() {
                     <div className={styles.formBody}>
                         <section className={styles.mediaGrid}>
                             <div className={styles.mediaField}>
-                                <div className={styles.mediaLabel}>Video file <span>Max 15 MB</span></div>
+                                <div className={styles.mediaLabel}>Video file <span>Max 5 MB</span></div>
                                 <div className={`${styles.uploadBox} ${videoPreview ? styles.hasPreview : ""}`}>
                                     {videoPreview ? (
                                         <>
@@ -240,7 +249,7 @@ export default function UploadVideoPage() {
                             </div>
 
                             <div className={styles.mediaField}>
-                                <div className={styles.mediaLabel}>Thumbnail <span>Max 2 MB</span></div>
+                                <div className={styles.mediaLabel}>Thumbnail <span>Max 1 MB</span></div>
                                 <div className={`${styles.uploadBox} ${thumbnailPreview ? styles.hasPreview : ""}`}>
                                     {thumbnailPreview ? (
                                         <>

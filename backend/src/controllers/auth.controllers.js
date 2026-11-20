@@ -10,6 +10,122 @@ const { sha256hashConverter } = require("../utils/hash.utils.js");
 const { clearaccessTokenCookie, clearrefreshTokenCookie } = require("../utils/cookies.utils.js");
 
 
+// const signUp = async (req, res) => {
+//     let newUser;
+
+//     try {
+//         const username = req.body.username?.trim();
+//         const email = req.body.email?.trim().toLowerCase();
+//         const { password } = req.body;
+
+//         if (!username || !email || !password) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: "All fields are required"
+//             });
+//         }
+
+//         if (!validator.isEmail(email)) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: "Invalid email format"
+//             });
+//         }
+
+//         if (!validator.isStrongPassword(password, {
+//             minLength: 8,
+//             minLowercase: 1,
+//             minUppercase: 1,
+//             minNumbers: 1,
+//             minSymbols: 1
+//         })) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: "Password must contain uppercase, lowercase, number and symbol"
+//             });
+//         }
+
+//         const existingUser = await userModel.findOne({
+//             $or: [{ email }, { username }]
+//         });
+
+//         if (existingUser) {
+//             return res.status(409).json({
+//                 success: false,
+//                 message: existingUser.email === email
+//                     ? "Email already exists"
+//                     : "Username already exists",
+//                 keyPattern: {
+//                     [existingUser.email === email ? "email" : "username"]: 1
+//                 }
+//             });
+//         }
+
+//         const hashedPassword = await bcrypt.hash(password, 10);
+//         newUser = await userModel.create({
+//             username,
+//             email,
+//             password: hashedPassword
+//         });
+
+//         const tokens = generateToken({ userId: newUser._id });
+//         if (!tokens?.accessToken || !tokens.refreshToken) {
+//             await userModel.deleteOne({ _id: newUser._id });
+//             newUser = null;
+//             throw new Error("Token generation failed");
+//         }
+
+//         const { accessToken, refreshToken } = tokens;
+//         const sessionId = new mongoose.Types.ObjectId();
+
+//         await TokenModel.create({
+//             _id: sessionId,
+//             userId: newUser._id,
+//             refreshToken,
+//             expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+//             userAgent: req.get("user-agent") || null,
+//             ipAddress: req.ip
+//         });
+
+//         setaccessTokenCookie(res, accessToken);
+//         setrefreshTokenCookie(res, refreshToken);
+
+//         return res.status(201).json({
+//             success: true,
+//             message: "User created successfully",
+//             user: {
+//                 _id: newUser._id,
+//                 username: newUser.username,
+//                 email: newUser.email,
+//                 profilePictureUrl: newUser.profilePictureUrl
+//             }
+//         });
+//     } catch (error) {
+//         if (error?.code === 11000) {
+//             const duplicateField = Object.keys(error.keyPattern || {})[0];
+//             return res.status(409).json({
+//                 success: false,
+//                 message: duplicateField
+//                     ? `${duplicateField === "email" ? "Email" : "Username"} already exists`
+//                     : "Username or email already exists",
+//                 code: 11000,
+//                 keyPattern: error.keyPattern || {}
+//             });
+//         }
+
+//         if (newUser?._id) {
+//             await userModel.deleteOne({ _id: newUser._id }).catch(() => { });
+//         }
+
+//         console.error("Signup Error:", error.message);
+//         return res.status(500).json({
+//             success: false,
+//             message: "Signup failed"
+//         });
+//     }
+// };
+
+
 const signUp = async (req, res) => {
     let newUser;
 
@@ -62,6 +178,7 @@ const signUp = async (req, res) => {
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
+
         newUser = await userModel.create({
             username,
             email,
@@ -69,6 +186,7 @@ const signUp = async (req, res) => {
         });
 
         const tokens = generateToken({ userId: newUser._id });
+
         if (!tokens?.accessToken || !tokens.refreshToken) {
             await userModel.deleteOne({ _id: newUser._id });
             newUser = null;
@@ -100,9 +218,12 @@ const signUp = async (req, res) => {
                 profilePictureUrl: newUser.profilePictureUrl
             }
         });
+
     } catch (error) {
+
         if (error?.code === 11000) {
             const duplicateField = Object.keys(error.keyPattern || {})[0];
+
             return res.status(409).json({
                 success: false,
                 message: duplicateField
@@ -118,6 +239,7 @@ const signUp = async (req, res) => {
         }
 
         console.error("Signup Error:", error.message);
+
         return res.status(500).json({
             success: false,
             message: "Signup failed"
@@ -301,7 +423,8 @@ const myProfile = async (req, res) => {
                     _id: user._id,
                     username: user.username,
                     email: user.email,
-                    profilePictureUrl: user.profilePictureUrl
+                    profilePictureUrl: user.profilePictureUrl,
+                    subscribedChannels: user.subscribedChannels || [],
                 }
             }
 

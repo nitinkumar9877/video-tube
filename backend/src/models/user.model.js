@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema({
         trim: true,
         unique: true
     },
+
     email: {
         type: String,
         required: true,
@@ -14,19 +15,34 @@ const userSchema = new mongoose.Schema({
         lowercase: true,
         unique: true
     },
+
     password: {
         type: String,
-        required: true //never use because we are using google auth for login and signup
+        required: true
     },
+
     profilePictureUrl: {
         type: String,
         default: ""
     },
-    channel: [{
+
+    // All channels subscribed to by this user
+    subscribedChannels: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Channel'
-    }]
+    }],
+
+    // Channels created/owned by this user
+    channels: {
+        type: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Channel'
+        }],
+        default: []
+    }
+
 }, { timestamps: true });
 
 const userModel = mongoose.model('User', userSchema);
+
 module.exports = userModel;

@@ -9,6 +9,7 @@ const channelSchema = new mongoose.Schema(
             minlength: 3,
             maxlength: 100
         },
+
         channelHandle: {
             type: String,
             required: true,
@@ -23,7 +24,8 @@ const channelSchema = new mongoose.Schema(
             default: "",
             maxlength: 1000
         },
-        category:{
+
+        category: {
             type: String,
             required: true,
             trim: true,
@@ -46,6 +48,13 @@ const channelSchema = new mongoose.Schema(
             ref: 'User',
             required: true
         },
+
+        subscribers: [
+            {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'User'
+            }
+        ],
 
         subscribersCount: {
             type: Number,

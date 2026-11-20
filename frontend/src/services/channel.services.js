@@ -2,7 +2,7 @@ import api from "@/services/api";
 
 export const getMyChannel = async () => {
     try {
-        const response = await api.get("/api/auth/channels/me");
+        const response = await api.get("api/auth/channels/me");
         const responseData = response.data;
         const channel = responseData.data?.channel ?? null;
 
@@ -13,6 +13,22 @@ export const getMyChannel = async () => {
             success: false,
             channel: null,
             message: error.response?.data?.message || "Failed to fetch channel data"
+        };
+    }
+};
+
+export const fetchSubscribedChannels = async () => {
+    try {     
+        // http://localhost:1111/api/auth/subscribed-channels
+        const response = await api.get("api/auth/subscribed-channels");
+        const responseData = response.data;
+        return responseData;
+    } catch (error) {
+        console.error("Error fetching subscribed channels:", error);
+        return {
+            success: false,
+            data: [],
+            message: error.response?.data?.message || "Failed to fetch subscribed channels"
         };
     }
 };

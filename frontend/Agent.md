@@ -247,6 +247,7 @@ The video detail endpoint currently increments `views` for every successful fetc
 - Logo types are JPG, PNG, or WebP; maximum size is 5 MB.
 - Handle validation must match the backend service pattern: lowercase letters, digits, and hyphens.
 - If a channel already exists or is created successfully, navigates to `/user/my-channel`.
+- Create-channel failures now display the backend `error` or `message`; missing logo, missing fields, invalid handle, duplicate channel, and duplicate handle use clear `400`/`409` responses instead of a generic fallback.
 
 `src/services/channel.services.js` normalizes `GET /api/auth/channels/me` to include a top-level `channel` property. The backend response contract is `{ success, data: { channel } }`, including when the user has no channel.
 

@@ -92,3 +92,6 @@ http://localhost:1111/api/auth/channels/me
 
 14: Get My profile
 http://localhost:1111/api/auth/myProfile
+
+15: Get channel list which is Suscribed by the login user 
+http://localhost:1111/api/auth/subscribed-channels

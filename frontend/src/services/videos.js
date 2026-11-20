@@ -31,3 +31,24 @@ export const getMyVideos = async () => {
         };
     }
 };
+
+export const uploadVideo = async (videoData) => {
+    try {
+        const response = await api.post("/api/auth/channels/upload-video", videoData, {
+            headers: {
+                "Content-Type": "multipart/form-data",
+            },
+        });
+        return response.data;
+    } catch (error) {
+        console.error("Error uploading video:", error.message);
+        return {
+            success: false,
+            message:
+                error.response?.data?.message ||
+                error.response?.data?.error ||
+                error.message ||
+                "Failed to upload video"
+        };
+    }
+};
