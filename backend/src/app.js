@@ -6,13 +6,17 @@ const authRoutes = require("./routes/post.routes.js");
 
 const app = express();
 
+app.set("trust proxy", 1);
+
 const allowedOrigins = (process.env.FRONTEND_URL || "http://localhost:3000")
     .split(",")
-    .map((origin) => origin.trim());
+    .map((origin) => origin.trim().replace(/\/$/, ""))
+    .filter(Boolean);
 
 app.use(cors({
     origin(origin, callback) {
-        if (!origin || allowedOrigins.includes(origin)) {
+        const normalizedOrigin = origin?.replace(/\/$/, "");
+        if (!normalizedOrigin || allowedOrigins.includes(normalizedOrigin)) {
             callback(null, true);
             return;
         }

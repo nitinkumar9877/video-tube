@@ -52,3 +52,42 @@ export const uploadVideo = async (videoData) => {
         };
     }
 };
+
+export const getVideoById = async (id) => {
+    try {
+        console.log("1")
+        const apiurl = `${process.env.NEXT_PUBLIC_API_URL}${process.env.NEXT_PUBLIC_AUTH_API_PATH}videos/${id}`;
+        console.log("2")
+
+        const response = await axios.get(apiurl);
+        console.log("Response from getVideoById:", response.data);
+        if (!response.data.success) {
+            return { success: false, message: "Failed to fetch video by ID" };
+        }
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching video by ID:", error);
+        return {
+            success: false,
+            message: error.response?.data?.message || "Failed to fetch video by ID"
+        };
+    }
+}
+
+// http://localhost:1111/api/auth/videos/6afd5067b8b1c2481c712e80/like
+export const doLikeVideo = async (videoId) => {
+    try {
+        const videoUrl = `${process.env.NEXT_PUBLIC_API_URL}${process.env.NEXT_PUBLIC_AUTH_API_PATH}videos/${videoId}/like`;
+        const response = await axios.post(videoUrl);
+        if (!response.data.success) {
+            return { success: false, message: "Failed to like video" };
+        };
+        return response.data;
+    } catch (error) {
+        console.error("Error liking video:", error);
+        return {
+            success: false,
+            message: error.response?.data?.message || "Failed to like video"
+        };
+    }
+};

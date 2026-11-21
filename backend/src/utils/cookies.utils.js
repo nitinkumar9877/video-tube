@@ -1,38 +1,32 @@
 const configData = require("../config/environment.config.js");
-const setrefreshTokenCookie = (res, refreshToken) => {
-    const cookieOptions = {
-        httpOnly: true,
-        secure: configData.NODE_ENV === "production", // Set to true in production
-        sameSite: "Strict", // Adjust based on your requirements
-        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days in milliseconds
-    };
 
-    res.cookie("refreshToken", refreshToken, cookieOptions);
+const isProduction = configData.NODE_ENV === "production";
+
+const getCookieOptions = (maxAge) => ({
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "None" : "Lax",
+    ...(maxAge ? { maxAge } : {})
+});
+
+const setrefreshTokenCookie = (res, refreshToken) => {
+    res.cookie(
+        "refreshToken",
+        refreshToken,
+        getCookieOptions(7 * 24 * 60 * 60 * 1000)
+    );
 };
 
 const setaccessTokenCookie = (res, accessToken) => {
-    const cookieOptions = {
-        httpOnly: true,
-        secure: configData.NODE_ENV === "production", // Set to true in production
-        sameSite: "Strict", // Adjust based on your requirements
-        maxAge: 5 * 60 * 1000 // 5 minutes in milliseconds
-    };
+    res.cookie("accessToken", accessToken, getCookieOptions(5 * 60 * 1000));
+};
 
-    res.cookie("accessToken", accessToken, cookieOptions);
-};
 const clearaccessTokenCookie = (res) => {
-    res.clearCookie("accessToken", {
-        httpOnly: true,
-        secure: configData.NODE_ENV === "production",
-        sameSite: "Strict"
-    });
+    res.clearCookie("accessToken", getCookieOptions());
 };
+
 const clearrefreshTokenCookie = (res) => {
-    res.clearCookie("refreshToken", {
-        httpOnly: true,
-        secure: configData.NODE_ENV === "production",
-        sameSite: "Strict"
-    });
+    res.clearCookie("refreshToken", getCookieOptions());
 };
 
 module.exports = {

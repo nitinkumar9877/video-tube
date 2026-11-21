@@ -2,21 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import {
-    MdPlayArrow,
-    MdPause,
-    MdVolumeUp,
-    MdVolumeOff,
-    MdFullscreen,
-    MdThumbUp,
-    MdThumbUpOffAlt,
-    MdShare,
-    MdBookmarkBorder,
-    MdMoreHoriz,
-    MdCheck,
-} from "react-icons/md";
+import { useParams, useRouter } from "next/navigation";
+import { MdPlayArrow, MdPause, MdVolumeUp, MdVolumeOff, MdFullscreen, MdThumbUp, MdThumbUpOffAlt, MdShare, MdBookmarkBorder, MdMoreHoriz, MdCheck, } from "react-icons/md";
 import api from "@/services/api";
 import styles from "../../../../components/styleSheets/videoPlay.module.css";
+import { doLikeVideo, getVideoById } from "@/services/videos";
+import { checkAlreadyLogin } from "@/services/AuthUser";
 
 const formatTime = (seconds = 0) => {
     if (!Number.isFinite(seconds)) return "0:00";
@@ -34,46 +25,32 @@ const formatCount = (count = 0) => {
     return String(count);
 };
 
-const demoVideo = {
-    title: "A Calm Journey Through the Mountain Valley",
-    description: "Take a quiet visual journey through misty mountains, open roads, and the places in between. A travel film made for slowing down and enjoying the view.",
-    videoUrl: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
-    thumbnailUrl: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1600&q=85",
-    duration: 252,
-    views: 1248000,
-    category: "Lifestyle",
-    publishedAt: "2026-05-28T12:00:00.000Z",
-    likes: new Array(48600),
-    owner: { username: "Northbound Studio" },
-    channel: { name: "Northbound", subscribersCount: 284000 },
-};
-
 export default function VideoPlayPage() {
+    const router = useRouter();
+    const params = useParams();
     const videoRef = useRef(null);
-    const [id, setId] = useState("");
-    const [video, setVideo] = useState(demoVideo);
+    const id = params?.id ? decodeURIComponent(params.id) : "";
+    const [video, setVideo] = useState({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [playing, setPlaying] = useState(false);
     const [muted, setMuted] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
-    const [duration, setDuration] = useState(demoVideo.duration);
+    const [duration, setDuration] = useState();
     const [liked, setLiked] = useState(false);
-    const [likeCount, setLikeCount] = useState(demoVideo.likes.length);
+    const [likeCount, setLikeCount] = useState();
     const [subscribed, setSubscribed] = useState(false);
-
-    useEffect(() => {
-        const pathParts = window.location.pathname.split("/").filter(Boolean);
-        setId(decodeURIComponent(pathParts[pathParts.length - 1] || ""));
-    }, []);
 
     useEffect(() => {
         if (!id) return;
 
         const loadVideo = async () => {
             try {
-                const response = await api.get(`/api/auth/videos/${id}`);
-                const data = response.data?.data;
+                const response = await getVideoById(id);
+                if (!response || !response.success) {
+                    throw new Error("Failed to fetch video data");
+                }
+                const data = response?.data;
 
                 if (data) {
                     setVideo(data);
@@ -120,26 +97,35 @@ export default function VideoPlayPage() {
         setCurrentTime(nextTime);
     };
 
-    const toggleFullscreen = () => {
-        const player = videoRef.current?.closest("article");
-        if (document.fullscreenElement) {
-            document.exitFullscreen();
-        } else {
-            player?.requestFullscreen?.();
-        }
-    };
-
     const toggleLike = async () => {
-        setLiked((current) => {
-            setLikeCount((count) => Math.max(0, count + (current ? -1 : 1)));
-            return !current;
-        });
+        let checkLogin;
 
         try {
-            await api.post(`/api/auth/videos/${id}/like`);
-        } catch {
-            setLiked((current) => !current);
-            setLikeCount((count) => Math.max(0, count + (liked ? -1 : 1)));
+            checkLogin = await checkAlreadyLogin();
+        } catch (authError) {
+            setError(authError?.message || "Unable to check login status");
+            return;
+        }
+
+        if (!checkLogin?.success) {
+            router.push("/login");
+            return;
+        }
+
+        const previousLiked = liked;
+        const nextLiked = !previousLiked;
+        setLiked(nextLiked);
+        setLikeCount((count) => Math.max(0, count + (nextLiked ? 1 : -1)));
+
+        try {
+            const response = await doLikeVideo(video._id);
+            if (!response?.success) {
+                throw new Error("Failed to like/unlike video");
+            }
+        } catch (likeError) {
+            setLiked(previousLiked);
+            setLikeCount((count) => Math.max(0, count + (nextLiked ? -1 : 1)));
+            setError(likeError?.message || "Failed to like/unlike video");
         }
     };
 
@@ -202,9 +188,9 @@ export default function VideoPlayPage() {
                                     {muted ? <MdVolumeOff /> : <MdVolumeUp />}
                                 </button>
                                 <span className={styles.time}>{formatTime(currentTime)} / {formatTime(duration)}</span>
-                                <button type="button" className={styles.fullscreenButton} onClick={toggleFullscreen} aria-label="Fullscreen">
+                                {/* <button type="button" className={styles.fullscreenButton} onClick={toggleFullscreen} aria-label="Fullscreen">
                                     <MdFullscreen />
-                                </button>
+                                </button> */}
                             </div>
                         </div>
                     </article>
@@ -258,7 +244,7 @@ export default function VideoPlayPage() {
                     </div>
                 </section>
 
-                <aside className={styles.upNext}>
+                {/* <aside className={styles.upNext}>
                     <h2>Up next</h2>
                     {[
                         ["The Long Way to the Sea", "820K views"],
@@ -275,7 +261,7 @@ export default function VideoPlayPage() {
                             </div>
                         </Link>
                     ))}
-                </aside>
+                </aside> */}
             </div>
         </main>
     );

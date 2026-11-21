@@ -286,6 +286,9 @@ Channel handle is generated from channel name but can be manually changed in the
 - Falls back to demo `demoVideo` if the API request fails
 - Supports client video controls
 - POSTs `/api/auth/videos/:id/like`
+- The like action checks `checkAlreadyLogin()` before changing the like state
+- Unauthenticated users are redirected to `/login` and the like state is not changed
+- API failures roll the optimistic like state and count back to their previous values
 
 `src/app/dashboard/videos/[id]/edit/page.js` is empty and currently causes a Next.js prerender/export error if included by static page generation. Treat it as unfinished, not as an existing feature.
 

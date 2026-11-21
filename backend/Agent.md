@@ -53,6 +53,7 @@ Confirmed required values:
 - `IMAGEKIT_PUBLIC_KEY`
 - `IMAGEKIT_PRIVATE_KEY`
 - `NODE_ENV`
+- `FRONTEND_URL` (required for deployed frontend CORS; comma-separated origins supported)
 - `CLOUDFLARE_API_TOKEN`
 - `CLOUDFLARE_ACCOUNT_ID`
 - `AWS_ACCESS_KEY_ID`
@@ -86,10 +87,10 @@ app.use(cookieParser());
 app.use("/api/auth", authRoutes);
 ```
 
-Current CORS only allows `http://localhost:3000`.
+CORS allows `http://localhost:3000` by default and deployed origins from `FRONTEND_URL`.
 Credentials are required because access and refresh tokens are HttpOnly cookies.
 
-For deployment, preserve the frontend origin through an environment variable and keep credentials enabled.
+For deployment, set `FRONTEND_URL` to the exact frontend origin(s), separated by commas if needed, and keep credentials enabled. The backend accepts origins without a trailing slash and trusts one proxy hop for Render IP/session metadata.
 
 ## Route registry
 
@@ -221,10 +222,18 @@ Cookie helpers:
 - Both are HttpOnly
 - Access lifetime: 5 minutes
 - Refresh lifetime: 7 days
-- Secure in production
-- SameSite `Strict`
+- `Secure` in production
+- `SameSite=None` in production for cross-site frontend/backend cookies
+- `SameSite=Lax` in local development
 
-Signup currently bypasses these helpers and should be updated to use them.
+Signup, login, refresh, and logout use these shared helpers. Set-cookie and clear-cookie operations must use the same `Secure` and `SameSite` values or browsers will keep or reject cookies inconsistently.
+
+For Render:
+
+- Set `NODE_ENV=production`.
+- Set `FRONTEND_URL` to the deployed frontend origin, for example `https://playtube.vercel.app`.
+- Set HTTPS backend/frontend origins and enable Axios `withCredentials: true` on browser API calls.
+- Do not set a cookie `Domain` between independent Render/Vercel hostnames.
 
 ## Middleware
 
