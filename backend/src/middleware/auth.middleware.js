@@ -1,5 +1,5 @@
 const configData = require("../config/environment.config");
-const { clearaccessTokenCookie, clearrefreshTokenCookie } = require("../utils/cookies.utils");
+const { clearAccessTokenCookie, clearRefreshTokenCookie } = require("../utils/cookies.utils");
 const jwt = require("jsonwebtoken");
 const userModel = require("../models/user.model.js");
 const TokenModel = require("../models/Token.model.js");
@@ -29,7 +29,7 @@ const accessTokenValidation = async (req, res, next) => {
             );
         } catch (error) {
             printCatchBlockError(error);
-            clearaccessTokenCookie(res);
+            clearAccessTokenCookie(res);
 
             if (
                 error.name === "TokenExpiredError" ||
@@ -50,7 +50,7 @@ const accessTokenValidation = async (req, res, next) => {
         const userId = decoded.userId;
 
         if (!userId) {
-            clearaccessTokenCookie(res);
+            clearAccessTokenCookie(res);
 
             return res.status(401).json({
                 success: false,
@@ -63,8 +63,8 @@ const accessTokenValidation = async (req, res, next) => {
         const user = await userModel.findById(userId);
 
         if (!user) {
-            clearaccessTokenCookie(res);
-            clearrefreshTokenCookie(res);
+            clearAccessTokenCookie(res);
+            clearRefreshTokenCookie(res);
 
             return res.status(401).json({
                 success: false,
@@ -114,8 +114,8 @@ const refreshTokenValidation = async (req, res, next) => {
     } catch (error) {
         console.log("inside catch 1st");
 
-        clearaccessTokenCookie(res);
-        clearrefreshTokenCookie(res);
+        clearAccessTokenCookie(res);
+        clearRefreshTokenCookie(res);
         printCatchBlockError(error);
 
         return res.status(401).json({
@@ -128,8 +128,8 @@ const refreshTokenValidation = async (req, res, next) => {
     try {
         console.log("decodedrefreshToken.id:", decodedrefreshToken.userId);
         if (!decodedrefreshToken.userId) {
-            clearaccessTokenCookie(res);
-            clearrefreshTokenCookie(res);
+            clearAccessTokenCookie(res);
+            clearRefreshTokenCookie(res);
             return res.status(401).json({
                 success: false,
                 message: "Invalid refresh token payload."
@@ -138,8 +138,8 @@ const refreshTokenValidation = async (req, res, next) => {
 
         user = await userModel.findById(decodedrefreshToken.userId);
         if (!user) {
-            clearaccessTokenCookie(res);
-            clearrefreshTokenCookie(res);
+            clearAccessTokenCookie(res);
+            clearRefreshTokenCookie(res);
             return res.status(401).json({
                 success: false,
                 message: "User not found."
@@ -153,8 +153,8 @@ const refreshTokenValidation = async (req, res, next) => {
         });
 
         if (!tokenSession) {
-            clearaccessTokenCookie(res);
-            clearrefreshTokenCookie(res);
+            clearAccessTokenCookie(res);
+            clearRefreshTokenCookie(res);
             return res.status(401).json({
                 success: false,
                 message: "Refresh token session is no longer valid."
@@ -162,7 +162,7 @@ const refreshTokenValidation = async (req, res, next) => {
         }
     } catch (error) {
         printCatchBlockError(error);
-        clearrefreshTokenCookie(res);
+        clearRefreshTokenCookie(res);
         return res.status(401).json({
             success: false,
             message: "Refresh token is invalid or expired."

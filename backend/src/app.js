@@ -16,11 +16,15 @@ const allowedOrigins = (process.env.FRONTEND_URL || "http://localhost:3000")
 app.use(cors({
     origin(origin, callback) {
         const normalizedOrigin = origin?.replace(/\/$/, "");
-        if (!normalizedOrigin || allowedOrigins.includes(normalizedOrigin)) {
+        const isVercelPreview =
+            normalizedOrigin &&
+            /^https:\/\/video-tube(?:-[a-z0-9-]+)*\.vercel\.app$/.test(normalizedOrigin);
+
+        if (!normalizedOrigin || allowedOrigins.includes(normalizedOrigin) || isVercelPreview) {
             callback(null, true);
             return;
         }
-        callback(new Error("Origin not allowed by CORS"));
+        callback(null, false);
     },
     credentials: true
 }));

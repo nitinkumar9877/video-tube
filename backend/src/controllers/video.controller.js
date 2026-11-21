@@ -2,6 +2,8 @@
 const { printCatchBlockError } = require("../utils/errorPrint.utils.js");
 const { putVideoObjectS3 } = require("../services/videosS3.services.js");
 const { putThumbnailObjectS3 } = require("../services/imageS3.services.js");
+const { deleteVideoObjectS3 } = require("../services/videosS3.services.js");
+const { deleteThumbnailObjectS3 } = require("../services/imageS3.services.js");
 const { uploadVideoDataToMongoDB, deleteVideoFromEverywhere, updateVideoDetailsInMongoDB, likeVideoInMongoDB } = require("../services/mongoDB-video.services.js");
 const VideoModel = require("../models/video.model.js");
 
@@ -108,11 +110,11 @@ const videoUpload = async (req, res) => {
             // Delete successfully uploaded files
             const cleanupResults = await Promise.allSettled([
                 videoResult
-                    ? deleteObjectS3(videoResult.videoKey)
+                    ? deleteVideoObjectS3(videoResult.videoKey)
                     : Promise.resolve(),
 
                 thumbnailResult
-                    ? deleteObjectS3(thumbnailResult.thumbnailKey)
+                    ? deleteThumbnailObjectS3(thumbnailResult.thumbnailKey)
                     : Promise.resolve()
             ]);
 

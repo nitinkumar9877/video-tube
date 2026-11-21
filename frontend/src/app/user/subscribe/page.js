@@ -25,8 +25,8 @@ export default function SubscribePage() {
                 }
 
                 // Adjust this according to your actual API response structure.
-                const channelData = Array.isArray(response.data)
-                    ? response.data
+                const channelData = Array.isArray(response.channels)
+                    ? response.channels
                     : [];
 
                 setChannels(channelData);
@@ -85,7 +85,7 @@ export default function SubscribePage() {
                         {loading ? (
                             <p>Loading subscribed channels...</p>
                         ) : channels.length === 0 ? (
-                            <p>You haven't subscribed to any channels yet.</p>
+                            <p>You haven&apos;t subscribed to any channels yet.</p>
                         ) : (
                             channels.map((channel) => {
                                 const channelId = channel._id;

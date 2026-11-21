@@ -4,10 +4,10 @@ const { generateToken } = require("../config/token.config.js");
 const validator = require("validator");
 const bcrypt = require("bcryptjs");
 const TokenModel = require("../models/Token.model.js");
-const { setaccessTokenCookie, setrefreshTokenCookie } = require("../utils/cookies.utils.js");
+const { setAccessTokenCookie, setRefreshTokenCookie } = require("../utils/cookies.utils.js");
 const mongoose = require("mongoose");
 const { sha256hashConverter } = require("../utils/hash.utils.js");
-const { clearaccessTokenCookie, clearrefreshTokenCookie } = require("../utils/cookies.utils.js");
+const { clearAccessTokenCookie, clearRefreshTokenCookie } = require("../utils/cookies.utils.js");
 
 
 // const signUp = async (req, res) => {
@@ -205,8 +205,8 @@ const signUp = async (req, res) => {
             ipAddress: req.ip
         });
 
-        setaccessTokenCookie(res, accessToken);
-        setrefreshTokenCookie(res, refreshToken);
+        setAccessTokenCookie(res, accessToken);
+        setRefreshTokenCookie(res, refreshToken);
 
         return res.status(201).json({
             success: true,
@@ -311,11 +311,11 @@ const login = async (req, res) => {
         console.log("10");
 
         // Store access token in HttpOnly cookie
-        setaccessTokenCookie(res, accessToken);
+        setAccessTokenCookie(res, accessToken);
 
         console.log("11");
         // Store refresh token in HttpOnly cookie
-        setrefreshTokenCookie(res, refreshToken);
+        setRefreshTokenCookie(res, refreshToken);
         console.log("12");
 
         return res.status(200).json({
@@ -344,8 +344,8 @@ const login = async (req, res) => {
 
 const logout = (req, res) => {
     try {
-        clearaccessTokenCookie(res);
-        clearrefreshTokenCookie(res);
+        clearAccessTokenCookie(res);
+        clearRefreshTokenCookie(res);
         res.status(200).json({ success: true, message: "Logout successful" });
     } catch (error) {
         console.error("Error during logout:", error);
@@ -375,9 +375,9 @@ const refreshToken = async (req, res) => {
         const { accessToken, refreshToken } = tokens;
         console.log("New tokens generated successfully");
         console.log("1");
-        setrefreshTokenCookie(res, refreshToken);
+        setRefreshTokenCookie(res, refreshToken);
         console.log("2");
-        setaccessTokenCookie(res, accessToken);
+        setAccessTokenCookie(res, accessToken);
         console.log("3");
         // Generate a unique session ID
         const sessionId = new mongoose.Types.ObjectId();
