@@ -111,6 +111,7 @@ export default function CreateChannelPage() {
             formData.append("Image", channelLogo);
 
             const response = await api.post("/api/auth/channels", formData, {
+                withCredentials: true,
                 headers: { "Content-Type": "multipart/form-data" },
             });
             setChannel(response.data?.channel || null);

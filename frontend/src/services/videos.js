@@ -3,7 +3,9 @@ import api from "@/services/api";
 export const getAllVideos = async () => {
     try {
         const url = `${process.env.NEXT_PUBLIC_API_URL}${process.env.NEXT_PUBLIC_AUTH_API_PATH}videos`;
-        const response = await axios.get(url);
+        const response = await axios.get(url,{
+            withCredentials: true
+        });
         console.log("Response from getAllVideos:", response.data);
         return response.data;
     }
@@ -15,7 +17,9 @@ export const getAllVideos = async () => {
 // http://localhost:1111/api/auth/my-videos
 export const getMyVideos = async () => {
     try {
-        const response = await api.get("/api/auth/my-videos");
+        const response = await api.get("/api/auth/my-videos", {
+            withCredentials: true
+        });
         const responseData = response.data;
         return {
             ...responseData,
@@ -35,6 +39,7 @@ export const getMyVideos = async () => {
 export const uploadVideo = async (videoData) => {
     try {
         const response = await api.post("/api/auth/channels/upload-video", videoData, {
+            withCredentials: true,
             headers: {
                 "Content-Type": "multipart/form-data",
             },
@@ -59,7 +64,9 @@ export const getVideoById = async (id) => {
         const apiurl = `${process.env.NEXT_PUBLIC_API_URL}${process.env.NEXT_PUBLIC_AUTH_API_PATH}videos/${id}`;
         console.log("2")
 
-        const response = await axios.get(apiurl);
+        const response = await axios.get(apiurl, {
+            withCredentials: true
+        });
         console.log("Response from getVideoById:", response.data);
         if (!response.data.success) {
             return { success: false, message: "Failed to fetch video by ID" };
@@ -78,7 +85,9 @@ export const getVideoById = async (id) => {
 export const doLikeVideo = async (videoId) => {
     try {
         const videoUrl = `${process.env.NEXT_PUBLIC_API_URL}${process.env.NEXT_PUBLIC_AUTH_API_PATH}videos/${videoId}/like`;
-        const response = await axios.post(videoUrl);
+        const response = await axios.post(videoUrl, {}, {
+            withCredentials: true
+        });
         if (!response.data.success) {
             return { success: false, message: "Failed to like video" };
         };

@@ -2,7 +2,9 @@ import api from "@/services/api";
 
 export const getMyChannel = async () => {
     try {
-        const response = await api.get("api/auth/channels/me");
+        const response = await api.get("api/auth/channels/me", {
+            withCredentials: true
+        });
         const responseData = response.data;
         const channel = responseData.data?.channel ?? null;
 
@@ -20,7 +22,9 @@ export const getMyChannel = async () => {
 export const fetchSubscribedChannels = async () => {
     try {     
         // http://localhost:1111/api/auth/subscribed-channels
-        const response = await api.get("api/auth/subscribed-channels");
+        const response = await api.get("api/auth/subscribed-channels", {
+            withCredentials: true
+        });
         const responseData = response.data;
         return responseData;
     } catch (error) {
