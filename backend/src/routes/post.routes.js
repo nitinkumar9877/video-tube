@@ -1,7 +1,8 @@
 const { Router } = require("express");
 const authRoutes = Router();
+const passport = require('passport');
 const { signUp, login, logout, refreshToken, myProfile } = require("../controllers/auth.controllers.js");
-const { accessTokenValidation, refreshTokenValidation } = require("../middleware/auth.middleware.js");
+const { accessTokenValidation, refreshTokenValidation, ensureAuthenticated } = require("../middleware/auth.middleware.js");
 const { createChannel, getMyChannel, getSubscribedChannelsByUser } = require("../controllers/channel.controller.js");
 const { videoUpload, getAllVideos, getVideo, deleteVideo, updateVideoDetails, myVideos, likeVideo } = require("../controllers/video.controller.js");
 const { uploadVideo, uploadImage, uploadVideoAndThumbnail } = require("../middleware/multer.middleware.js");
@@ -23,6 +24,16 @@ authRoutes.get('/subscribed-channels', accessTokenValidation, getSubscribedChann
 authRoutes.get('/videos', getAllVideos);
 authRoutes.get('/videos/:id', getVideo);
 authRoutes.get('/my-videos', accessTokenValidation, myVideos); // /api/auth/videos/my-videos
+// To login with Google
+authRoutes.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+authRoutes.get('/auth/google/callback', passport.authenticate('google', { failureRedirect: '/' }), (req, res) => {
+    // Successful authentication, redirect or respond with user data
+    res.redirect('/'); // Redirect to your desired route after successful login
+});
+authRoutes.get('/profile', ensureAuthenticated, (req, res) => {
+    res.send('This is your profile page.');
+});
+
 
 authRoutes.patch('/videos/:key', accessTokenValidation, updateVideoDetails);
 

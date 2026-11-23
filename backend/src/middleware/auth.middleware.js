@@ -91,9 +91,6 @@ const accessTokenValidation = async (req, res, next) => {
     }
 };
 
-module.exports = accessTokenValidation;
-
-
 const refreshTokenValidation = async (req, res, next) => {
     console.log("---------------------- refreshToeknValidation Middleware start here----------------------");
     const refreshToken = req.cookies?.refreshToken;
@@ -175,7 +172,15 @@ const refreshTokenValidation = async (req, res, next) => {
     next(); // Proceed to the next middleware or route handler
 };
 
+function ensureAuthenticated(req, res, next) {
+    if (req.isAuthenticated()) {
+        return next();
+    }
+    res.redirect('/login');
+}
+
 module.exports = {
     accessTokenValidation,
-    refreshTokenValidation
+    refreshTokenValidation,
+    ensureAuthenticated
 };

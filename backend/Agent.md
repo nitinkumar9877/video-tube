@@ -259,7 +259,7 @@ For Render:
 - Assigns `req.user`
 - Continues to protected controller
 
-Invalid-payload and user-not-found branches now call the correctly named `clearaccessTokenCookie` helper.
+Invalid-payload and user-not-found branches now call the correctly named `clearAccessTokenCookie` helper.
 
 ### Refresh token middleware
 

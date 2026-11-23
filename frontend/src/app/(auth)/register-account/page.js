@@ -308,10 +308,10 @@ const RegisterNewUser = () => {
         handleCreateAccount(e);
     };
 
-    const handleGoogleLogin = () =>{
-        // Handle Google login
+    const handleGoogleLogin = () => {
         console.log("Google login clicked");
-    } 
+        window.location.href = 'http://localhost:5000/auth/google';
+    }
 
     return (
         <main className={styles.registerPage}>

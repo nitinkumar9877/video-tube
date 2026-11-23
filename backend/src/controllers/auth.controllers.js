@@ -87,8 +87,8 @@ const { clearAccessTokenCookie, clearRefreshTokenCookie } = require("../utils/co
 //             ipAddress: req.ip
 //         });
 
-//         setaccessTokenCookie(res, accessToken);
-//         setrefreshTokenCookie(res, refreshToken);
+//         setAccessTokenCookie(res, accessToken);
+//         setRefreshTokenCookie(res, refreshToken);
 
 //         return res.status(201).json({
 //             success: true,

@@ -47,8 +47,4 @@ module.exports = {
     setAccessTokenCookie,
     clearAccessTokenCookie,
     clearRefreshTokenCookie,
-    setrefreshTokenCookie: setRefreshTokenCookie,
-    setaccessTokenCookie: setAccessTokenCookie,
-    clearrefreshTokenCookie: clearRefreshTokenCookie,
-    clearaccessTokenCookie: clearAccessTokenCookie
 };
