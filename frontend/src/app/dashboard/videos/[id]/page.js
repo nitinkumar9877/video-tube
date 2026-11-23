@@ -43,7 +43,7 @@ export default function VideoPlayPage() {
 
     useEffect(() => {
         if (!id) return;
-
+        // let mounted = true;
         const loadVideo = async () => {
             try {
                 const response = await getVideoById(id);
@@ -61,9 +61,10 @@ export default function VideoPlayPage() {
                 setLikeCount(demoVideo.likes.length);
             } finally {
                 setLoading(false);
+                // mounted && setLoading(false);
             }
         };
-
+        
         loadVideo();
     }, [id]);
 

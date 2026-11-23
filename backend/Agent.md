@@ -92,6 +92,13 @@ Credentials are required because access and refresh tokens are HttpOnly cookies.
 
 For deployment, set `FRONTEND_URL` to the exact frontend origin(s), separated by commas if needed, and keep credentials enabled. The backend accepts origins without a trailing slash and trusts one proxy hop for Render IP/session metadata.
 
+Environment loading:
+
+- `src/app.js` loads `environment.config.js` before reading `FRONTEND_URL`, so `backend/.env` and Render environment variables are available to CORS consistently.
+- The deployment frontend origin must be HTTPS.
+- Vercel preview origins matching `https://video-tube*.vercel.app` are accepted by the CORS matcher. Custom domains must be listed in `FRONTEND_URL`.
+- `BASE_URL` belongs to the frontend origin for OAuth/frontend redirects and should not be the Render backend origin.
+
 ## Route registry
 
 All routes are mounted at `/api/auth`.
@@ -232,8 +239,12 @@ For Render:
 
 - Set `NODE_ENV=production`.
 - Set `FRONTEND_URL` to the deployed frontend origin, for example `https://playtube.vercel.app`.
+- Set `BASE_URL` to the same deployed frontend origin.
 - Set HTTPS backend/frontend origins and enable Axios `withCredentials: true` on browser API calls.
 - Do not set a cookie `Domain` between independent Render/Vercel hostnames.
+- Render environment variables override `backend/.env`; update the Render dashboard rather than relying on a local `.env` file.
+- Cookies work across Render/Vercel only as HTTPS cross-site cookies: `Secure=true` and `SameSite=None`.
+- Browsers may block third-party cookies in strict privacy modes, including private browsing. If strict blocking is observed, use a custom domain/subdomains or a reverse proxy so frontend and backend are same-site.
 
 ## Middleware
 

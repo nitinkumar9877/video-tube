@@ -30,6 +30,13 @@ Required in `frontend/.env.local`:
 
 Do not add secrets to this folder. Variables prefixed with `NEXT_PUBLIC_` are exposed to browser code.
 
+For Render/Vercel deployment:
+
+- Set `NEXT_PUBLIC_API_URL` to the exact HTTPS Render backend origin, for example `https://video-tube-mq8p.onrender.com/`.
+- Every browser auth request must use `axios` options or an Axios instance with `withCredentials: true`.
+- Login/signup/refresh/logout depend on third-party HttpOnly cookies. The backend must set `Secure=true` and `SameSite=None` in production and allow the exact frontend origin through CORS.
+- Do not store JWT access/refresh tokens in `localStorage` or JavaScript state.
+
 API examples:
 
 - `NEXT_PUBLIC_API_URL + NEXT_PUBLIC_AUTH_API_PATH + "register-user"`

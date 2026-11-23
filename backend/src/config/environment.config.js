@@ -21,6 +21,21 @@ if (!process.env.NODE_ENV) {
     throw new Error("NODE_ENV is not defined in the environment variables");
 }
 
+if (process.env.NODE_ENV === "production" && !process.env.FRONTEND_URL) {
+    throw new Error("FRONTEND_URL is not defined in the environment variables");
+}
+
+if (!process.env.GOOGLE_CLIENT_ID) {
+    throw new Error("GOOGLE_CLIENT_ID is not defined in the environment variables");
+}
+
+if (!process.env.GOOGLE_CLIENT_SECRET) {
+    throw new Error("GOOGLE_CLIENT_SECRET is not defined in the environment variables");
+}
+if (!process.env.BASE_URL) {
+    throw new Error("BASE_URL is not defined in the environment variables");
+}
+
 const configData = {
     PORT: process.env.PORT,
     MONGODBURL: process.env.MONGODBURL,
@@ -40,5 +55,8 @@ const configData = {
     AWS_REGION: process.env.AWS_REGION,
     AWS_BUCKET_NAME: process.env.AWS_BUCKET_NAME,
     FRONTEND_URL: process.env.FRONTEND_URL,
+    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+    BASE_URL: process.env.BASE_URL,
 }
 module.exports = configData;

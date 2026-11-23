@@ -250,7 +250,7 @@ const RegisterNewUser = () => {
                 throw apiError;
             }
             const dataForLocalStorage = {
-                _id : response.user._id,
+                _id: response.user._id,
                 username: response.user.username,
                 email: response.user.email,
                 profilePictureUrl: response.user.profilePictureUrl || null,
@@ -307,6 +307,11 @@ const RegisterNewUser = () => {
 
         handleCreateAccount(e);
     };
+
+    const handleGoogleLogin = () =>{
+        // Handle Google login
+        console.log("Google login clicked");
+    } 
 
     return (
         <main className={styles.registerPage}>
@@ -604,6 +609,24 @@ const RegisterNewUser = () => {
                     )}
 
                 </form>
+                <button
+                    type="button"
+                    disabled={isLoading}
+                    className={styles.continueButton}
+                    onClick={handleGoogleLogin}
+                >
+                    {isLoading ? (
+                        <>
+                            <ClipLoader
+                                color="#ffffff"
+                                size={18}
+                            />
+                            Creating Account...
+                        </>
+                    ) : (
+                        "Login with Google"
+                    )}
+                </button>
 
                 {/* Footer */}
                 <div className={styles.footer}>

@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+const configData = require("./config/environment.config.js");
 
 const authRoutes = require("./routes/post.routes.js");
 
@@ -8,7 +9,7 @@ const app = express();
 
 app.set("trust proxy", 1);
 
-const allowedOrigins = (process.env.FRONTEND_URL || "http://localhost:3000")
+const allowedOrigins = (configData.FRONTEND_URL || "http://localhost:3000")
     .split(",")
     .map((origin) => origin.trim().replace(/\/$/, ""))
     .filter(Boolean);
