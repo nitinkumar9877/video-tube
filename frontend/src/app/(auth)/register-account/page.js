@@ -8,7 +8,8 @@ import { FaArrowLeft, FaUser, FaEnvelope, FaLock, } from "react-icons/fa";
 import { ClipLoader } from "react-spinners";
 import styles from "../../../components/styleSheets/register.module.css";
 import logo from "../../../assets/playTube.webp";
-import { AuthRegisterUser, checkAlreadyLogin } from "@/services/AuthUser";
+import { AuthRegisterUser, checkAlreadyLogin } from "@/services/AuthUser.js";
+import handleGoogleSuccess from "@/components/auth/GoogleLogin.jsx";
 
 // Initial form state
 const INITIAL_FORM_DATA = {
@@ -308,10 +309,10 @@ const RegisterNewUser = () => {
         handleCreateAccount(e);
     };
 
-    const handleGoogleLogin = () => {
-        console.log("Google login clicked");
-        window.location.href = 'http://localhost:5000/auth/google';
-    }
+    // const handleGoogleLogin = () => {
+    //     console.log("Google login clicked");
+    //     window.location.href = 'http://localhost:5000/auth/google';
+    // }
 
     return (
         <main className={styles.registerPage}>
@@ -609,7 +610,14 @@ const RegisterNewUser = () => {
                     )}
 
                 </form>
-                <button
+                <div style={{ marginTop: "20px", textAlign: "center" }}>
+                    <p style={{ marginBottom: "12px" }}>
+                        Or continue with
+                    </p>
+
+                    <handleGoogleSuccess />
+                </div>
+                {/* <button
                     type="button"
                     disabled={isLoading}
                     className={styles.continueButton}
@@ -626,7 +634,7 @@ const RegisterNewUser = () => {
                     ) : (
                         "Login with Google"
                     )}
-                </button>
+                </button> */}
 
                 {/* Footer */}
                 <div className={styles.footer}>

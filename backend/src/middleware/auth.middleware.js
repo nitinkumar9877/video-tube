@@ -172,15 +172,7 @@ const refreshTokenValidation = async (req, res, next) => {
     next(); // Proceed to the next middleware or route handler
 };
 
-function ensureAuthenticated(req, res, next) {
-    if (req.isAuthenticated()) {
-        return next();
-    }
-    res.redirect('/login');
-}
-
 module.exports = {
     accessTokenValidation,
-    refreshTokenValidation,
-    ensureAuthenticated
+    refreshTokenValidation
 };

@@ -1,12 +1,13 @@
 const { OAuth2Client } = require('google-auth-library');
 const jwt = require('jsonwebtoken');
 const userModel = require('../models/user.model');
-const configData = require('../config/configData');
+const configData = require('../config/environment.config');
 const { setRefreshTokenCookie, setAccessTokenCookie, clearRefreshTokenCookie, clearAccessTokenCookie } = require('../utils/cookies.utils');
+const { generateToken } = require('../config/token.config');
 
 const googleClient = new OAuth2Client(configData.GOOGLE_CLIENT_ID);
 
-const googleAuth = async (req, res) => {
+const googleAuthSignup = async (req, res) => {
     try {
         const { credential } = req.body;
         if (!credential) {
@@ -14,25 +15,20 @@ const googleAuth = async (req, res) => {
                 success: false,
                 message: 'Google credential is missing.'
             });
-
         }
         const ticket = await googleClient.verifyIdToken({
             idToken: credential,
             audience: configData.GOOGLE_CLIENT_ID,
         });
-
         const payload = ticket.getPayload();
         const { sub: googleId, email, name, picture, email_verified } = payload;
-
         if (!email_verified || !email) {
             return res.status(400).json({
                 success: false,
                 message: 'Invalid Google credential.'
             });
         }
-
         let user = await userModel.findOne({ googleId });
-
         if (!user) {
             user = await userModel.findOne({ email });
             if (user.googleId && user.googleId !== googleId) {
@@ -60,8 +56,30 @@ const googleAuth = async (req, res) => {
             await user.save();
         }
         // generate JWT tokens
-        const accessToken = 
+        const { accessToken, refreshToken } = generateToken(user._id);
+        const sessionId = new mongoose.Types.ObjectId();
 
+        await TokenModel.create({
+            _id: sessionId,
+            userId: user._id,
+            refreshToken,
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            userAgent: req.get("user-agent") || null,
+            ipAddress: req.ip
+        });
+
+        setAccessTokenCookie(res, accessToken);
+        setRefreshTokenCookie(res, refreshToken);
+        return res.status(200).json({
+            success: true,
+            message: "SuccessFully Login Using Google",
+            user: {
+                _id: user._id,
+                username: user.username,
+                email: user.email,
+                profilePictureUrl: user.profilePictureUrl
+            }
+        });
     }
     catch (error) {
         console.error('Error during Google authentication:', error);
@@ -71,3 +89,5 @@ const googleAuth = async (req, res) => {
         });
     };
 };
+
+module.exports = { googleAuthSignup }

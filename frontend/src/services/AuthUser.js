@@ -39,7 +39,6 @@ export const AuthLoginUser = async (payload) => {
 export const logoutUser = async () => {
     try {
         const logoutApi = `${process.env.NEXT_PUBLIC_API_URL}${process.env.NEXT_PUBLIC_AUTH_API_PATH}logout`;
-
         // http://localhost:1111/api/auth/logout
         const response = await axios.post(logoutApi, {}, { withCredentials: true });
         console.log("Response from logout API :: ", response.data);
@@ -90,4 +89,30 @@ export const FetchUserData = async () => {
     }
 
     return null;
+};
+
+export const AuthGoogleUser = async (credential) => {
+    try {
+        const googleLoginApi =
+            `${process.env.NEXT_PUBLIC_API_URL}` +
+            `${process.env.NEXT_PUBLIC_AUTH_API_PATH}Google-Register`;
+
+        const response = await axios.post(
+            googleLoginApi,
+            { credential },
+            {
+                withCredentials: true,
+                timeout: 15000,
+            }
+        );
+
+        return response.data;
+
+    } catch (error) {
+        console.error(
+            "Google authentication failed:",
+            error.response?.data || error.message
+        );
+        throw error;
+    }
 };
