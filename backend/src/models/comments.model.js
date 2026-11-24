@@ -34,4 +34,5 @@ const commentSchema = new mongoose.Schema(
 
 commentSchema.index({ video: 1, createdAt: -1 });
 
-module.exports = mongoose.model("Comment", commentSchema);
+const CommentModel = mongoose.model("Comment", commentSchema);
+module.exports = CommentModel;

@@ -1,10 +1,11 @@
 "use client";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { MdCheck, MdNotificationsNone, MdOutlineVideoLibrary } from "react-icons/md";
 
 import styles from "@/components/styleSheets/subscribe.module.css";
-import { fetchSubscribedChannels } from "@/services/channel.services";
+import { fetchSubscribedChannels, toggalSubscribeChannel } from "@/services/channel.services";
 
 export default function SubscribePage() {
     const [channels, setChannels] = useState([]);
@@ -51,11 +52,26 @@ export default function SubscribePage() {
         fetchSubscribed();
     }, []);
 
-    const toggleSubscription = (channelId) => {
-        setSubscribe((current) => ({
-            ...current,
-            [channelId]: !current[channelId],
-        }));
+    const toggleSubscription = async (channelId) => {
+        try {
+            const response = await toggalSubscribeChannel(channelId);
+            if (!response.success) {
+                console.error(
+                    "Failed to toggle subscription:",
+                    response.message
+                );
+                return;
+            }
+
+            const isSubscribed = response.isSubscribed;
+
+            setSubscribe((current) => ({
+                ...current,
+                [channelId]: isSubscribed,
+            }));
+        } catch (error) {
+            console.error("Error toggling subscription:", error);
+        }
     };
 
     const subscribedCount = Object.values(Subscribe).filter(Boolean).length;
@@ -103,9 +119,11 @@ export default function SubscribePage() {
                                         >
                                             <div className={styles.channelAvatar}>
                                                 {channel.channelLogo ? (
-                                                    <img
+                                                    <Image
                                                         src={channel.channelLogo}
                                                         alt={channel.channelName}
+                                                        width={48}
+                                                        height={48}
                                                     />
                                                 ) : (
                                                     channel.channelName
@@ -142,8 +160,8 @@ export default function SubscribePage() {
                                             <button
                                                 type="button"
                                                 className={`${styles.subscriptionButton} ${subscribed
-                                                        ? styles.subscribed
-                                                        : styles.unsubscribed
+                                                    ? styles.subscribed
+                                                    : styles.unsubscribed
                                                     }`}
                                                 onClick={() => toggleSubscription(channelId)}
                                                 aria-pressed={subscribed}

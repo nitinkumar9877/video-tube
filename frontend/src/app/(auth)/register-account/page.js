@@ -9,7 +9,7 @@ import { ClipLoader } from "react-spinners";
 import styles from "../../../components/styleSheets/register.module.css";
 import logo from "../../../assets/playTube.webp";
 import { AuthRegisterUser, checkAlreadyLogin } from "@/services/AuthUser.js";
-import handleGoogleSuccess from "@/components/auth/GoogleLogin.jsx";
+import GoogleLoginButton from "@/components/auth/GoogleAuth.jsx";
 
 // Initial form state
 const INITIAL_FORM_DATA = {
@@ -615,7 +615,7 @@ const RegisterNewUser = () => {
                         Or continue with
                     </p>
 
-                    <handleGoogleSuccess />
+                    <GoogleLoginButton />
                 </div>
                 {/* <button
                     type="button"

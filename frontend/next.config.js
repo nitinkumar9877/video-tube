@@ -4,8 +4,13 @@ const nextConfig = {
         remotePatterns: [
             {
                 protocol: "https",
-                hostname: "youtube-clone-project-145.s3.us-east-1.amazonaws.com",
-                pathname: "/profile-images/**",
+                hostname: "**",
+                pathname: "/**",
+            },
+            {
+                protocol: "http",
+                hostname: "**",
+                pathname: "/**",
             },
         ],
     },

@@ -202,4 +202,94 @@ const getSubscribedChannelsByUser = async (req, res) => {
     }
 };
 
-module.exports = { createChannel, getMyChannel, getSubscribedChannelsByUser };  
+const suscribeOrUnsubscribeChannel = async (req, res) => {
+    try {
+        console.log("---------------- Subscribe/Unsubscribe Channel Controller ----------------");
+        const userId = req.user?._id;
+        const channelId = req.params.channelId;
+        console.log("1");
+        if (!userId) {
+            return res.status(401).json({
+                success: false,
+                error: "Unauthorized"
+            });
+        }
+        console.log("2");
+
+        if (!channelId) {
+            return res.status(400).json({
+                success: false,
+                error: "Channel ID is required"
+            });
+        };
+        console.log("3");
+        const user = await userModel.findById(userId);
+        console.log("User:", user);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                error: "User not found"
+            });
+        }
+        console.log("4");
+        const channel = await channelModel.findById(channelId);
+        if (!channel) {
+            return res.status(404).json({
+                success: false,
+                error: "Channel not found"
+            });
+        }
+        console.log("5");
+        if (channel.owner.toString() === userId.toString()) {
+            return res.status(400).json({
+                success: false,
+                error: "You cannot subscribe to your own channel",
+                isOwner: true
+
+            });
+        };
+        console.log("6");
+        const isSubscribed = user.subscribedChannels.includes(channelId);
+        console.log("7");
+        if (isSubscribed) {
+            user.subscribedChannels.pull(channelId);
+            channel.subscribers.pull(userId);
+            await user.save();
+            await channel.save();
+
+            if (channel.subscribersCount > 0) {
+                channel.subscribersCount -= 1;
+            }
+            return res.status(200).json({
+                success: true,
+                message: "Unsubscribed from the channel successfully",
+                isSubscribed: false,
+                isOwner: false
+            });
+        } else {
+            // Subscribe logic
+            user.subscribedChannels.push(channelId);
+            channel.subscribers.push(userId);
+            await user.save();
+            await channel.save();
+
+            return res.status(200).json({
+                success: true,
+                message: "Subscribed to the channel successfully",
+                isSubscribed: true,
+                isOwner: false
+            });
+        }
+        console.log("----- Subscribe/Unsubscribe Channel Controller executed successfully -----");
+
+    } catch (error) {
+        printCatchBlockError(error);
+
+        return res.status(500).json({
+            success: false,
+            error: error.message || "Unable to subscribe/unsubscribe channel"
+        });
+    }
+};
+
+module.exports = { createChannel, getMyChannel, getSubscribedChannelsByUser, suscribeOrUnsubscribeChannel };

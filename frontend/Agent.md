@@ -1,360 +1,274 @@
-# PlayTube Frontend Agent Guide
+# Frontend Agent Memory
 
 ## Purpose
 
-This file is the complete working overview of the Next.js frontend. Read this file before inspecting source files. It describes the app structure, routes, API usage, styling conventions, authentication behavior, current demo/fallback behavior, and known broken areas.
-
-## Runtime and commands
-
-- Framework: Next.js 16.4.6
-- UI: React 19.3.0
-- Styling: Tailwind CSS 4 with global CSS and CSS Modules
-- HTTP: Axios
-- Icons: `react-icons`
-- Fonts: Geist and Geist Mono
-- Working directory: `frontend`
-- Start development server: `npm run dev`
-- Lint: `npm run lint`
-- Production build: `npm run build`
-- Production server: `npm start`
-- Local frontend URL: `http://localhost:3000`
+This file is the persistent implementation memory for the `frontend/` portion of the YouTubeClone project. Read this file before changing frontend code. Keep it accurate after every frontend change. For changes that affect backend requests or responses, also update `../backend/Agent.md`.
+
+## Runtime and Entry Points
+
+- Framework: Next.js 16 App Router.
+- UI: React 19 client components and server-rendered App Router pages.
+- Package scripts:
+  - `npm run dev`: start Next.js development server.
+  - `npm run build`: create a production build.
+  - `npm run start`: serve a production build.
+  - `npm run lint`: run ESLint.
+- `src/app/layout.js`: root HTML/body layout, Geist fonts, Google OAuth provider, and global AppShell.
+- `src/app/globals.css`: global styles.
+- `src/app/page.js`: public/home route.
+- Alias `@/*` maps to `src/*` through `jsconfig.json`.
+- The Google provider requires `NEXT_PUBLIC_GOOGLE_CLIENT_ID`.
+
+## App Router Structure
+
+- `(auth)/login`: login page.
+- `(auth)/register-account`: two-step registration page and Google login button.
+- `/`: main home/video feed route.
+- `/user`: profile page.
+- `/user/createChannel`: channel creation page.
+- `/user/history`: watch history UI.
+- `/user/liked`: liked videos UI.
+- `/user/my-channel`: channel overview.
+- `/user/my-channel/my-videos`: owner's video list.
+- `/user/my-channel/upload`: video upload form.
+- `/user/subscribe`: subscribed channels.
+- `/dashboard`: dashboard overview.
+- `/dashboard/channel`: channel dashboard/management.
+- `/dashboard/videos`: video dashboard list.
+- `/dashboard/videos/[id]`: dynamic video detail route.
+- `/dashboard/videos/[id]/edit`: dynamic video edit route.
+- `(main)/help`: help route.
+- `(main)/info`: info route.
+- `(main)/report-history`: report-history route.
+- `(main)/settings`: settings route.
+- `(main)/terms-of-service`: terms route.
+
+Route groups `(auth)` and `(main)` organize pages without changing URL paths.
+
+## Source Map
+
+- `src/app/`: App Router pages and layout styles.
+- `src/components/common/app-shell.js`: shared header, sidebar, login state, and logout UI.
+- `src/components/common/header.js`: shared header component.
+- `src/components/common/footer.js`: shared footer component.
+- `src/components/auth/GoogleAuth.jsx`: Google credential login button.
+- `src/components/video/`: video components (content evolves with implementation).
+- `src/components/channel/`: channel components.
+- `src/components/styleSheets/`: CSS Modules used by pages/components.
+- `src/services/api.js`: shared Axios instance.
+- `src/services/AuthUser.js`: authentication and profile API calls.
+- `src/services/channel.services.js`: channel/subscription API calls.
+- `src/services/videos.js`: video list/detail/upload/like API calls.
+- `src/assets/playTube.webp`: PlayTube logo image.
+- `public/images/`: public static image assets.
+- `public/`: additional public files.
+
+## Root Layout and AppShell
+
+`src/app/layout.js`:
+- loads Geist and Geist Mono;
+- imports global CSS;
+- wraps every page with `GoogleOAuthProvider`;
+- wraps every page with `AppShell`.
+
+`AppShell`:
+- is a client component;
+- detects `/login` and `/register-account` and bypasses the normal shell for auth pages;
+- calls `checkAlreadyLogin()` during mount to determine login state;
+- displays login/signup links when logged out;
+- displays profile/logout controls when logged in;
+- closes profile menus on outside mouse events and Escape;
+- calls `logoutUser()` and clears the local logged-in shell state.
+
+The shell does not currently render a real uploaded profile picture in the profile trigger; that display may be changed deliberately.
+
+## Authentication and Session Frontend
+
+`src/services/AuthUser.js` owns direct authentication APIs.
+
+Environment URL convention:
+- `NEXT_PUBLIC_API_URL` is the backend origin.
+- `NEXT_PUBLIC_AUTH_API_PATH` is the API prefix, normally `/api/auth/` or equivalent.
+- Calls combine these values before endpoint names.
+
+Functions:
+- `AuthRegisterUser(payload)`: POST `register-user` with credentials and cookies.
+- `AuthLoginUser(payload)`: POST `login`.
+- `logoutUser()`: POST `logout`.
+- `checkAlreadyLogin()`: POST `refresh-token`; returns `{ success: false }` on HTTP 401.
+- `FetchUserData()`: GET `myProfile`; catches failures and returns a failed shape.
+- `AuthGoogleUser(credential)`: POST `Google-Register` with `{ credential }`.
+
+All browser authentication requests use `withCredentials: true` so HTTP-only cookies can be sent and updated.
+
+`checkAlreadyLogin()` is used by the AppShell and auth pages to determine whether to show authenticated UI or redirect.
+
+The login and register pages store some public user fields in `localStorage` under `playtube_user` after successful local auth. This is UI data only; authentication authority remains in HTTP-only cookies. Never store access or refresh tokens in localStorage.
 
-The app has no separate frontend build package or monorepo package command. Run npm commands inside `frontend`.
+## Register Account Page
 
-## Environment variables
+File: `src/app/(auth)/register-account/page.js`.
 
-Required in `frontend/.env.local`:
+- is a client page;
+- has a two-step state machine:
+  1. username and email;
+  2. password and confirmation;
+- validates username length 3-20 and allowed characters `[a-zA-Z0-9_]`;
+- validates email format;
+- requires password length >= 8 and uppercase, lowercase, number, and symbol;
+- requires confirmation to match;
+- calls `AuthRegisterUser` only after both validation stages pass;
+- prevents duplicate submit using loading state and `submitInProgress` ref;
+- sends trimmed username/email and raw password to the backend;
+- parses API duplicate errors and returns email/username field-specific messages;
+- stores `playtube_user` on success;
+- redirects to `/` on success;
+- renders `GoogleAuth.jsx` as the Google login control;
+- disables back while loading or on step 1.
 
-- `NEXT_PUBLIC_API_URL`: backend origin, normally `http://localhost:1111/`
-- `NEXT_PUBLIC_AUTH_API_PATH`: API prefix, normally `api/auth/`
+Do not change validation rules only in the frontend; keep them synchronized with backend validator rules.
 
-Do not add secrets to this folder. Variables prefixed with `NEXT_PUBLIC_` are exposed to browser code.
+## Login Page
 
-For Render/Vercel deployment:
+File: `src/app/(auth)/login/page.js`.
 
-- Set `NEXT_PUBLIC_API_URL` to the exact HTTPS Render backend origin, for example `https://video-tube-mq8p.onrender.com/`.
-- Every browser auth request must use `axios` options or an Axios instance with `withCredentials: true`.
-- Login/signup/refresh/logout depend on third-party HttpOnly cookies. The backend must set `Secure=true` and `SameSite=None` in production and allow the exact frontend origin through CORS.
-- Do not store JWT access/refresh tokens in `localStorage` or JavaScript state.
+- validates email and required password;
+- calls `AuthLoginUser`;
+- stores public user fields in `playtube_user` when a successful user payload is returned;
+- redirects to `/user` after login;
+- catches API errors and shows a general login error.
 
-API examples:
+## Google Auth Component
 
-- `NEXT_PUBLIC_API_URL + NEXT_PUBLIC_AUTH_API_PATH + "register-user"`
-- Local result: `http://localhost:1111/api/auth/register-user`
+File: `src/components/auth/GoogleAuth.jsx`.
 
-## Source structure
+- client component;
+- uses `GoogleLogin` from `@react-oauth/google`;
+- receives a credential in `onSuccess`;
+- calls `AuthGoogleUser(credential)`;
+- assigns the browser to `/user` after successful backend cookie creation;
+- renders loading/error text for Google flows.
 
-- `src/app/layout.js`: root layout and global `AppShell`
-- `src/app/globals.css`: Tailwind import and global variables/reset
-- `src/app/page.js`: public home feed
-- `src/app/(auth)/login/page.js`: login
-- `src/app/(auth)/register-account/page.js`: two-step registration
-- `src/app/user/createChannel/page.js`: authenticated channel creation form
-- `src/app/dashboard/upload/page.js`: video and thumbnail upload
-- `src/app/dashboard/videos/page.js`: redirects to home in the current implementation
-- `src/app/dashboard/videos/[id]/page.js`: video player
-- `src/app/dashboard/videos/[id]/edit/page.js`: currently empty and should not be treated as implemented
-- `src/app/dashboard/channel/page.js`: public-style channel demo page
-- `src/app/user/page.js`: logged-in profile page
-- `src/app/user/my-channel/page.js`: channel owner dashboard
-- `src/app/user/history/page.js`: watch history demo
-- `src/app/user/liked/page.js`: liked videos demo
-- `src/app/user/subscribe/page.js`: Subscribe demo
-- `src/components/common/app-shell.js`: header and sidebar shell
-- `src/components/styleSheets/*.module.css`: page/component CSS modules
-- `src/services/AuthUser.js`: signup, login, logout, and auth refresh
-- `src/services/api.js`: Axios instance with credentials
-- `src/services/videos.js`: video fetch helper
-- `src/services/channel.services.js`: my-channel helper
+The register page must import this actual component as `GoogleAuth.jsx`, not any old/deleted Google login filename.
 
-## Root layout and navigation
+## Shared Axios Layer
 
-`src/app/layout.js` wraps every page in `AppShell`.
+`src/services/api.js` creates an Axios instance:
+- `baseURL: NEXT_PUBLIC_API_URL`;
+- `withCredentials: true`;
+- JSON content type by default.
 
-`AppShell` provides:
+Use this instance for API paths that can be built relative to `NEXT_PUBLIC_API_URL`. Video upload overrides the content type to `multipart/form-data`.
 
-- Fixed PlayTube header
-- Desktop sidebar
-- Collapsed sidebar around 1100px
-- Mobile bottom navigation around 720px
-- Login/profile menu
-- Route-aware active navigation
+Most service methods catch errors and return a predictable frontend fallback shape rather than throwing. When changing one, preserve or intentionally update the shape used by its page.
 
-Authentication pages are detected in `AppShell` and bypass the shell.
+## Channel Services
 
-Main navigation:
+`src/services/channel.services.js`:
+- `getMyChannel()` GETs `api/auth/channels/me` and returns `channel: null` on missing channel or failure.
+- `fetchSubscribedChannels()` GETs `api/auth/subscribed-channels`.
 
-- `/`: home
-- `/user/subscribe`
-- `/user/history`
-- `/user/liked`
-- `/settings`
-- `/report-history`
-- `/help`
+Callers should tolerate:
+- 401 unauthorized responses;
+- `channel: null`;
+- empty subscriptions;
+- stale-channel cleanup responses.
 
-Use existing `Link`, `useRouter`, and `react-icons/md` patterns unless a focused change requires otherwise.
+## Video Services
 
-## Styling rules
+`src/services/videos.js`:
+- `getAllVideos()`: GET public video list.
+- `getMyVideos()`: GET protected `/api/auth/my-videos` and normalizes `videos` to an array.
+- `uploadVideo(videoData)`: POST multipart protected `/api/auth/channels/upload-video`.
+- `getVideoById(id)`: GET public/dynamic video endpoint and increments backend view count.
+- `doLikeVideo(videoId)`: POST protected like endpoint.
 
-Use the existing combination of Tailwind and CSS Modules:
+Video page callers should handle `success: false`, missing `data`, and backend error text. Multipart upload payload fields must match:
+- `video`;
+- `thumbnailImage`;
+- title, description, category, duration, tags, visibility, and optional channelId.
 
-```jsx
-import styles from "@/components/styleSheets/example.module.css";
+## Main Content Pages
 
-<main className="w-full bg-white">
-  <div className={styles.page}>...</div>
-</main>
-```
+- Home: loads all videos and presents video cards/feed behavior.
+- User/profile: loads profile/user-facing data and provides account navigation.
+- Channel creation: submits a multipart channel payload and channel logo.
+- My channel: reads the current user's channel and handles no-channel state.
+- My videos: loads the owner's video list.
+- Upload: builds a `FormData` payload for video and thumbnail upload.
+- Subscriptions: fetches subscribed channel data.
+- History/liked: page-specific local or API-driven UI based on current implementation.
+- Dashboard routes: management surfaces for channel and videos, including dynamic edit/detail pages.
 
-Global styles:
+Read the specific page before changing its behavior because route logic and UI state are not centralized.
 
-- `src/app/globals.css`
-- Defines `--surface`, `--surface-soft`, `--text`, `--muted`, `--border`, and `--brand`
-- Brand red is `#ff0033`
-- Base font is Arial/Helvetica unless the Next Geist variables are selected by a component
+## Components and Styling
 
-CSS Modules are the primary page-specific styling mechanism.
-Tailwind utilities may be used for layout wrappers.
-Do not duplicate global reset rules in a component stylesheet.
-Keep responsive behavior aligned with existing breakpoints around 1050px, 820px, 760px, 680px, and 430px.
+- CSS Modules live in `src/components/styleSheets/*.module.css`.
+- Page components import only the stylesheet they own unless a shared shell class is needed.
+- Shared shell uses `app-shell.module.css`.
+- Images use Next.js `Image` where static/local assets are involved.
+- Icons come from `react-icons` (`fa`, `fa6`, and `md` families).
+- Loading spinners use `react-spinners`.
 
-## API client behavior
+Keep class names and module imports stable unless changing a page's style. Next.js CSS Modules do not allow dynamically invented class names.
 
-### `AuthUser.js`
+## Next.js Image Configuration
 
-- `AuthRegisterUser(payload)`: POST `/register-user`
-- `AuthLoginUser(payload)`: POST `/login`
-- `logoutUser()`: POST `/logout`
-- `checkAlreadyLogin()`: POST `/refresh-token`
+`next.config.js` currently allows Next.js `<Image>` optimization for remote image URLs over both HTTP and HTTPS from any hostname using wildcard `remotePatterns`. Static/local imports and Next.js assets continue to work normally. This broad setting supports external profile, channel, thumbnail, and media resources, but also means remote image sources should be validated by the application before use.
 
-Calls use `withCredentials: true` so HttpOnly cookies can be exchanged with the backend.
+## Environment Variables
 
-### `api.js`
+Frontend variables visible to browser code:
+- `NEXT_PUBLIC_API_URL`: backend origin/base URL.
+- `NEXT_PUBLIC_AUTH_API_PATH`: auth route prefix.
+- `NEXT_PUBLIC_GOOGLE_CLIENT_ID`: Google OAuth web client ID.
 
-`api` is an Axios instance configured with:
+Never put backend secrets or private AWS/ImageKit credentials in `NEXT_PUBLIC_*` variables.
 
-- `baseURL = NEXT_PUBLIC_API_URL`
-- `withCredentials = true`
-- JSON request headers
+## Backend Contract Summary
 
-For multipart uploads, override the request content type only in the upload call. The app currently does this with `formData`.
+Backend base is `http://localhost:1111/api/auth` in local comments, but use environment variables instead of hardcoding ports.
 
-Cookie/auth requests require both Axios credentials and matching backend CORS credentials.
+Current important contracts:
+- auth responses use `success`, `message`, and `user`;
+- protected requests rely on HTTP-only cookies and CORS credentials;
+- channel APIs use `channel`, `channels`, or `data.channel` shapes in different responses;
+- video list/detail/upload APIs use `data` arrays/objects;
+- duplicate auth failures should return HTTP 409 and may include `code`/`keyPattern`;
+- Google auth expects `{ credential }` and returns a public user shape plus a cookie session.
 
-## Authentication flow
+When a backend contract changes, update this file and `../backend/Agent.md` together.
 
-### Registration page
+## Route and Auth Behavior
 
-File: `src/app/(auth)/register-account/page.js`
+- Auth routes hide the normal AppShell.
+- Public `/` and dashboard routes still run AppShell login checks.
+- Protected page actions should return or show an unauthorized state instead of silently assuming success.
+- Successful login/registration is cookie-backed; page redirects are not authentication themselves.
+- `checkAlreadyLogin` should remain the session check when adding protected navigation.
 
-It is a two-step form:
+## Change Discipline
 
-1. Basic information: username and email
-2. Security: password and confirmation
+Before editing:
+1. Identify the owning App Router page/component.
+2. Trace its API call through `src/services/*` into `../backend/src/routes/post.routes.js`.
+3. Preserve response parsing, cookie behavior, and route contracts unless intentionally changing them.
+4. Use existing CSS Modules and React patterns.
+5. Check auth pages, AppShell, and the Google provider together when changing session logic.
 
-Frontend username rules:
+After every frontend change:
+1. Update this `Agent.md` with new/removed pages, components, routes, API shapes, environment variables, and state behavior.
+2. Update `../backend/Agent.md` for request/response or route changes.
+3. Run `npm run lint` or the narrowest relevant check.
+4. Run `npm run build` after App Router, imports, providers, or shared layout changes.
+5. Remove stale documentation instead of leaving contradictory memory.
 
-- Required
-- 3–20 characters
-- Letters, numbers, and underscores only
+## Recent Confirmed State
 
-Frontend email rules:
-
-- Required
-- Simple `name@domain` format
-
-Frontend password rules:
-
-- Required
-- At least 8 characters
-- One uppercase letter
-- One lowercase letter
-- One number
-- One symbol
-- Must match confirmation
-
-Payload:
-
-```js
-{
-  username,
-  email,
-  password
-}
-```
-
-The current API call is `AuthRegisterUser(payload)`.
-On success, form state is reset and the page redirects to `/`.
-On HTTP 409 or duplicate MongoDB errors, the page attempts to map duplicate email/username to field errors.
-
-Authentication status:
-
-- Registration and login `useEffect` auth checks now run once per mounted page.
-- Registration and login both use synchronous in-flight guards to prevent duplicate submissions.
-- Signup and login API calls use a 15-second timeout.
-- Signup duplicate responses are mapped to field-specific email/username errors.
-- Login reads the public user from `response.data.user` or `response.user` for compatibility with the auth service response.
-- Missing refresh sessions return a normal unauthenticated state instead of surfacing as a login-page error.
-- Backend signup token, cookie, duplicate-key, and protected-route mismatches are resolved; see `Bottleneck.md`.
-
-Do not change this flow into a single-step form unless explicitly requested.
-
-### Login page
-
-File: `src/app/(auth)/login/page.js`
-
-- Validates email and required password
-- POSTs to `/login`
-- Stores returned public user data in `localStorage["playtube_user"]`
-- Redirects to `/user`
-- Uses `checkAlreadyLogin()` to redirect an already authenticated user
-
-The login page `useEffect` also lacks a dependency array. Preserve auth behavior but avoid broad refactors.
-
-### Logout
-
-The logout call clears backend cookies. The AppShell then sets local login state to false and redirects to `/login`.
-
-## User and channel pages
-
-### Profile
-
-`src/app/user/page.js`
-
-- Calls `/api/auth/refresh-token` before fetching profile data; a missing/invalid server-side refresh session redirects to `/login` even if an old cookie remains in the browser.
-- Imports and calls `FetchUserData()` from `src/services/AuthUser.js`, fetches `/api/auth/myProfile`, and reads the user from `response.data.user`.
-- Calls `/api/auth/channels/me`
-- Shows create-channel or channel management links
-- Displays subscriber/video/view values when returned by the backend
-
-Refresh validation requires both a valid refresh JWT cookie and a matching, unexpired `Token` session in MongoDB. Deleting the session revokes the refresh cookie; it must not mint a replacement token.
-
-### My channel
-
-`src/app/user/my-channel/page.js`
-
-- Authenticates before fetching the channel and owned videos.
-- Loads `/api/auth/channels/me` through `getMyChannel()` and `/api/auth/my-videos` through `getMyVideos()`; both use the credentialed shared API client.
-- `getMyVideos()` normalizes the backend `data` array into a `videos` array.
-- Displays real video count, total views (sum of each owned video's `views`), subscriber count, video metadata, likes, and comments; do not substitute demo metrics when real counts are zero.
-- Zero videos show an upload prompt, zero views show a clear first-view message, and a search with no matches shows a separate empty result state.
-- If no channel exists, show a create-channel prompt instead of rendering undefined channel details.
-- Supports local search and grid/list view toggles
-- Provides links to upload, customize channel, and manage videos
-
-The video detail endpoint currently increments `views` for every successful fetch. It is request-based counting, not unique-view analytics.
-
-### Channel creation
-
-`src/app/user/createChannel/page.js`
-
-- Checks the refresh session, then fetches the current channel; unauthenticated users are sent to `/login`.
-- Uses the credentialed `api` Axios instance for `POST /api/auth/channels`.
-- Sends channel name, handle, description, category, and the `Image` multipart field.
-- Logo types are JPG, PNG, or WebP; maximum size is 5 MB.
-- Handle validation must match the backend service pattern: lowercase letters, digits, and hyphens.
-- If a channel already exists or is created successfully, navigates to `/user/my-channel`.
-- Create-channel failures now display the backend `error` or `message`; missing logo, missing fields, invalid handle, duplicate channel, and duplicate handle use clear `400`/`409` responses instead of a generic fallback.
-
-`src/services/channel.services.js` normalizes `GET /api/auth/channels/me` to include a top-level `channel` property. The backend response contract is `{ success, data: { channel } }`, including when the user has no channel.
-
-Channel handle is generated from channel name but can be manually changed in the form. Existing UI validation follows the backend lowercase letter/number/hyphen pattern.
-
-### Video upload
-
-`src/app/dashboard/upload/page.js`
-
-- Fetches the current channel
-- Requires a video and thumbnail
-- Video limit: 15 MB
-- Thumbnail limit: 2 MB
-- Browser MIME types:
-  - Video: MP4, AVI, MOV
-  - Thumbnail: JPG, PNG, WebP
-- Sends fields and files through `FormData`
-- Fields:
-  - `title`
-  - `description`
-  - `category`
-  - `duration`
-  - `tags` as JSON
-  - `visibility`
-  - `channelId`
-  - `video`
-  - `thumbnailImage`
-- POST: `/api/auth/channels/upload-video`
-
-## Video routes
-
-`src/app/dashboard/videos/[id]/page.js`
-
-- Reads the dynamic ID from `window.location.pathname`
-- Gets `/api/auth/videos/:id`
-- Falls back to demo `demoVideo` if the API request fails
-- Supports client video controls
-- POSTs `/api/auth/videos/:id/like`
-- The like action checks `checkAlreadyLogin()` before changing the like state
-- Unauthenticated users are redirected to `/login` and the like state is not changed
-- API failures roll the optimistic like state and count back to their previous values
-
-`src/app/dashboard/videos/[id]/edit/page.js` is empty and currently causes a Next.js prerender/export error if included by static page generation. Treat it as unfinished, not as an existing feature.
-
-`src/app/dashboard/videos/page.js` currently redirects to `/`. It should not be assumed to be a video-management implementation.
-
-## Demo data and fallback behavior
-
-Several pages use local demo data or fallback values:
-
-- Home feed: `src/app/page.js`
-- Channel page: `src/app/dashboard/channel/page.js`
-- My-channel dashboard: `src/app/user/my-channel/page.js`
-- Subscribe, liked videos, history
-- Video player fallback
-
-Do not remove demos unless explicitly replacing a page with real API data. For any API integration, preserve loading/error/empty states and existing route behavior.
-
-## Asset and image conventions
-
-- Static logo: `src/assets/playTube.webp`
-- Public assets: `public/`
-- Use `next/image` for local or configured remote images
-- Use existing string CSS backgrounds only when a thumbnail is intentional demo art
-- The channel, upload, and video pages support URL/object preview patterns
-
-Before adding remote image domains, update `next.config.mjs` if required by Next.js image optimization.
-
-## Known frontend issues
-
-1. `dashboard/videos/[id]/edit/page.js` has no React export.
-2. Registration and login `useEffect` auth checks have no dependency array.
-3. Registration success redirects immediately and does not use `successMessage`.
-4. `src/services/channel.services.js` incorrectly mixes Axios and `fetch` response checks.
-5. `src/services/videos.js` catches errors but does not rethrow or return a consistent empty shape.
-6. Several pages are demos and do not fetch the backend.
-7. Full build currently reaches but can be blocked by the empty edit route.
-
-## Safe change guidelines
-
-- Make focused changes; do not rewrite whole pages.
-- Preserve existing API payload names and route paths.
-- Preserve existing two-step registration and login redirect behavior.
-- Preserve server cookie credentials.
-- Use CSS Modules for page-specific visual changes.
-- Use Tailwind only for wrappers/shared utility layout.
-- Use one loading state and one error state per existing form.
-- Do not add automatic retries to signup or payment-like repeated actions.
-- Do not log passwords, tokens, cookies, or sensitive response bodies.
-- Run `npm run lint -- <changed-file>` after focused changes.
-- Run `npm run build` for route/config changes.
-
-## Before editing
-
-Read only these files unless the task targets another feature:
-
-- Global shell changes: `src/components/common/app-shell.js`
-- Auth changes: `src/app/(auth)/...`, `src/services/AuthUser.js`, `src/services/api.js`
-- Channel changes: `src/app/dashboard/createChannel/page.js`, `src/app/user/my-channel/page.js`
-- Upload changes: `src/app/dashboard/upload/page.js`
-- Video changes: `src/app/dashboard/videos/[id]/page.js`
-- Page layout: matching page plus matching CSS module
-- API route changes: `Bottleneck.md` and the backend `Agent.md`
+- The dynamic video player page uses `video.channel.channelName` for the channel label, checks authentication before subscription actions, and passes `video.channel._id` to the subscribe API.
+- The video page and like service synchronize like state/count from the backend `data.isLiked` and `data.likesCount` response fields.
+- Remote `next/image` sources are allowed over HTTP and HTTPS from wildcard hostnames in `next.config.js`.
+- The production build previously failed because the register page imported nonexistent `GoogleLogin.jsx` and rendered `<handleGoogleSuccess />`.
+- The register page now imports `GoogleAuth.jsx` and renders `<GoogleLoginButton />` as the actual component.
+- `npm run build` has successfully completed after that import correction.

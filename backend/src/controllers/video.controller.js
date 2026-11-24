@@ -6,6 +6,8 @@ const { deleteVideoObjectS3 } = require("../services/videosS3.services.js");
 const { deleteThumbnailObjectS3 } = require("../services/imageS3.services.js");
 const { uploadVideoDataToMongoDB, deleteVideoFromEverywhere, updateVideoDetailsInMongoDB, likeVideoInMongoDB } = require("../services/mongoDB-video.services.js");
 const VideoModel = require("../models/video.model.js");
+// import CommentModel from "../models/comment.model.js";
+const CommentModel = require("../models/comments.model.js");
 
 const videoUpload = async (req, res) => {
     let videoResult = null;
@@ -349,47 +351,6 @@ const myVideos = async (req, res) => {
     }
 };
 
-// const likeVideo = async (req, res) => {
-//     try {
-//         console.log("------------likeVideo controller called------------");
-//         const videoId = req.params.key;
-//         const userId = req.user._id; // Assuming you have user authentication middleware that adds the user object to the request
-
-//         if (!videoId) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "Missing required field: videoId"
-//             });
-//         }
-
-//         if (!userId) {
-//             return res.status(401).json({
-//                 success: false,
-//                 message: "Unauthorized: User not authenticated"
-//             });
-//         }
-
-//         // Call the service function to handle the like operation
-//         const result = await likeVideoInMongoDB(userId, videoId);
-
-//         return res.status(200).json({
-//             success: true,
-//             message: "Video liked successfully",
-//             data: result
-//         });
-//     } catch (error) {
-//         console.log("------------------ likeVideo error catch block ------------------");
-//         printCatchBlockError(error);
-//         return res.status(500).json({
-//             success: false,
-//             message: "Failed to like video",
-//             error: process.env.NODE_ENV === "development"
-//                 ? error.message
-//                 : undefined
-//         });
-//     }
-// };
-
 const likeVideo = async (req, res) => {
     try {
         console.log("------------likeVideo controller called------------");
@@ -435,4 +396,220 @@ const likeVideo = async (req, res) => {
     }
 };
 
-module.exports = { videoUpload, getAllVideos, getVideo, deleteVideo, updateVideoDetails, myVideos, likeVideo };
+const createVideoComments = async (req, res) => {
+    try {
+        console.log("------------VideoComments controller called------------");
+        const videoId = req.params;
+        if (!videoId) {
+            return res.status(400).json({
+                success: false,
+                message: "Missing required field: videoId"
+            });
+        };
+        console.log("1");
+        const { comment } = req.body;
+        if (!comment) {
+            return res.status(400).json({
+                success: false,
+                message: "Missing required field: comment"
+            });
+        };
+        console.log("2");
+        const userId = req.user?._id;
+        if (!userId) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized: User not authenticated"
+            });
+        };
+        console.log("3");
+        const video = await VideoModel.findById(videoId.key);
+        if (!video) {
+            return res.status(404).json({
+                success: false,
+                message: "Video not found"
+            });
+        }
+        console.log("4");
+        console.log("Video ID:", videoId.key);
+        console.log("User ID:", userId);
+        console.log("Comment:", comment);
+        const newComment = await CommentModel.create({
+            user: req.user._id,
+            video: videoId.key,
+            comment: comment,
+        });
+
+        const updatedVideo = await VideoModel.findByIdAndUpdate(
+            videoId.key,
+            { $push: { comments: newComment._id } },
+            { new: true }
+        );
+
+        if (!updatedVideo) {
+            return res.status(404).json({
+                success: false,
+                message: "Video not found or failed to update comments"
+            });
+        };
+
+        console.log("5");
+        if (!newComment._id) {
+            return res.status(500).json({
+                success: false,
+                message: "Failed to create comment"
+            });
+        };
+        console.log("6");
+        return res.status(201).json({
+            success: true,
+            message: "Comment added successfully",
+            data: newComment
+        });
+    } catch (error) {
+        console.log("------------------ VideoComments error catch block ------------------");
+        printCatchBlockError(error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch video comments",
+            error: error,
+            errorMsg: process.env.NODE_ENV === "development"
+                ? error.message
+                : undefined
+        });
+    }
+}
+
+const getVideoComments = async (req, res) => {
+    try {
+        console.log("------------getVideoComments controller called------------");
+        const videoId = req.params.key;
+        if (!videoId) {
+            return res.status(400).json({
+                success: false,
+                message: "Missing required field: videoId"
+            });
+        };
+
+        const comments = await CommentModel.find({ video: videoId });
+        if (!comments) {
+            return res.status(200).json({
+                success: true,
+                message: "No comments found for this video"
+            });
+        };
+        return res.status(200).json({
+            success: true,
+            message: "Comments fetched successfully",
+            data: comments
+        });
+    }
+    catch (error) {
+        console.log("------------------ getVideoComments error catch block ------------------");
+        printCatchBlockError(error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch video comments",
+            error: error,
+            errorMsg: process.env.NODE_ENV === "development"
+                ? error.message
+                : undefined
+        });
+    }
+}
+
+const deleteVideoComments = async (req, res) => {
+    try {
+        console.log("------------deleteVideoComments controller called------------");
+        const commentId = req.params.commentId;
+        if (!commentId) {
+            return res.status(400).json({
+                success: false,
+                message: "Missing required field: commentId"
+            });
+        };
+        const userId = req.user?._id;
+        if (!userId) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized: User not authenticated"
+            });
+        };
+        const comment = await CommentModel.findById(commentId);
+        if (!comment) {
+            return res.status(404).json({
+                success: false,
+                message: "Comment not found"
+            });
+        };
+        if (comment.user.toString() !== userId.toString()) {
+            return res.status(403).json({
+                success: false,
+                message: "Forbidden: You can only delete your own comments"
+            });
+        };
+        const video = await VideoModel.findById(comment.video);
+        if (!video) {
+            return res.status(404).json({
+                success: false,
+                message: "Video not found"
+            });
+        };
+        video.comments.pull(commentId);
+        await video.save();
+        await CommentModel.findByIdAndDelete(commentId);
+        return res.status(200).json({
+            success: true,
+            message: "Comment deleted successfully"
+        });
+    } catch (error) {
+        console.log("------------------ deleteVideoComments error catch block ------------------");
+        printCatchBlockError(error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to delete comment",
+            error: error,
+            errorMsg: process.env.NODE_ENV === "development"
+                ? error.message
+                : undefined
+        });
+    }
+};
+
+const getMyLikedVideos = async (req, res) => {
+    try {
+        console.log("------------getMyLikedVideos controller called------------");
+        const userId = req.user?._id;
+        if (!userId) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized: User not authenticated"
+            });
+        };
+
+        const likedVideos = await userModel.findById(userId).populate("likedVideos");
+
+        return res.status(200).json({
+            success: true,
+            message: "Liked videos fetched successfully",
+            data: likedVideos
+        });
+    } catch (error) {
+        console.log("------------------ getMyLikedVideos error catch block ------------------");
+        printCatchBlockError(error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch liked videos",
+            error: error,
+            errorMsg: process.env.NODE_ENV === "development"
+                ? error.message
+                : undefined
+        });
+    }
+};
+
+module.exports = { videoUpload, getAllVideos, getVideo, deleteVideo, updateVideoDetails, myVideos, likeVideo, createVideoComments, getVideoComments, deleteVideoComments, getMyLikedVideos };

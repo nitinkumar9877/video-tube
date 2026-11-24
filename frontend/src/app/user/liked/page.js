@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { MdClose, MdGridView, MdMoreVert, MdSearch, MdThumbUp, MdViewList, } from "react-icons/md";
 import styles from "@/components/styleSheets/liked.module.css";
@@ -31,6 +31,11 @@ export default function LikesPage() {
     const removeLikedVideo = (videoId) => {
         setLikedVideos((current) => current.filter((video) => video.id !== videoId));
     };
+
+    useEffect(() => {
+
+        const likeVideoApiResponse = async 
+    },[]);
 
     return (
         <main className={styles.page}>

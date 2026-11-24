@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { MdPlayArrow, MdPause, MdVolumeUp, MdVolumeOff, MdFullscreen, MdThumbUp, MdThumbUpOffAlt, MdShare, MdBookmarkBorder, MdMoreHoriz, MdCheck, } from "react-icons/md";
-import api from "@/services/api";
+import { MdPlayArrow, MdPause, MdVolumeUp, MdVolumeOff, MdThumbUp, MdThumbUpOffAlt, MdShare, MdBookmarkBorder, MdMoreHoriz, MdCheck, } from "react-icons/md";
 import styles from "../../../../components/styleSheets/videoPlay.module.css";
 import { doLikeVideo, getVideoById } from "@/services/videos";
-import { checkAlreadyLogin } from "@/services/AuthUser";
+import { checkAlreadyLogin, FetchUserData } from "@/services/AuthUser";
+import { toggalSubscribeChannel } from "@/services/channel.services";
 
 const formatTime = (seconds = 0) => {
     if (!Number.isFinite(seconds)) return "0:00";
@@ -31,7 +30,7 @@ export default function VideoPlayPage() {
     const videoRef = useRef(null);
     const id = params?.id ? decodeURIComponent(params.id) : "";
     const [video, setVideo] = useState({});
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(Boolean(id));
     const [error, setError] = useState("");
     const [playing, setPlaying] = useState(false);
     const [muted, setMuted] = useState(false);
@@ -39,7 +38,7 @@ export default function VideoPlayPage() {
     const [duration, setDuration] = useState();
     const [liked, setLiked] = useState(false);
     const [likeCount, setLikeCount] = useState();
-    const [subscribed, setSubscribed] = useState(false);
+    const [subscribed, setSubscribed] = useState();
 
     useEffect(() => {
         if (!id) return;
@@ -56,15 +55,48 @@ export default function VideoPlayPage() {
                     setVideo(data);
                     setLikeCount(Array.isArray(data.likes) ? data.likes.length : 0);
                 }
-            } catch {
-                setVideo(demoVideo);
-                setLikeCount(demoVideo.likes.length);
+
+                const checkLogin = await checkAlreadyLogin();
+                if (checkLogin?.success) {
+                    const userResponse = await FetchUserData();
+                    const user = userResponse?.data?.user;
+
+                    if (user) {
+                        const userId = String(user._id || "");
+                        const likedByUser = Array.isArray(data?.likes)
+                            && data.likes.some((like) => {
+                                const likeId = typeof like === "object" ? like._id : like;
+                                return String(likeId) === userId;
+                            });
+
+                        const subscribedChannelIds = Array.isArray(user.subscribedChannels)
+                            ? user.subscribedChannels.map((channel) =>
+                                String(typeof channel === "object" ? channel._id : channel)
+                            )
+                            : [];
+
+                        setLiked(likedByUser);
+                        setSubscribed(
+                            subscribedChannelIds.includes(String(data?.channel?._id || ""))
+                        );
+                    } else {
+                        setLiked(false);
+                        setSubscribed(false);
+                    }
+                } else {
+                    setLiked(false);
+                    setSubscribed(false);
+                }
+            } catch (loadError) {
+                setVideo({});
+                setLikeCount(0);
+                setError(loadError?.message || "Unable to load this video.");
             } finally {
                 setLoading(false);
                 // mounted && setLoading(false);
             }
         };
-        
+
         loadVideo();
     }, [id]);
 
@@ -123,12 +155,74 @@ export default function VideoPlayPage() {
             if (!response?.success) {
                 throw new Error("Failed to like/unlike video");
             }
+
+            const serverData = response?.data;
+            if (typeof serverData?.isLiked === "boolean") {
+                setLiked(serverData.isLiked);
+            }
+            if (typeof serverData?.likesCount === "number") {
+                setLikeCount(serverData.likesCount);
+            }
         } catch (likeError) {
             setLiked(previousLiked);
             setLikeCount((count) => Math.max(0, count + (nextLiked ? -1 : 1)));
             setError(likeError?.message || "Failed to like/unlike video");
         }
     };
+
+    const toggalSubscribe = async (channelId) => {
+        if (!channelId) {
+            setError("Channel information is unavailable.");
+            return;
+        }
+
+        try {
+            const checkLogin = await checkAlreadyLogin();
+            if (!checkLogin?.success) {
+                router.push("/login");
+                return;
+            }
+        } catch (authError) {
+            setError(authError?.message || "Unable to check login status");
+            return;
+        }
+
+        try {
+            const response = await toggalSubscribeChannel(channelId);
+            if (!response?.success) {
+                const message = response?.message || "Failed to toggle subscribe.";
+                console.error("Failed to toggle subscribe:", message);
+                setError(message);
+                return;
+            }
+
+            setSubscribed(response.isSubscribed);
+            setError("");
+            setVideo((currentVideo) => ({
+                ...currentVideo,
+                channel: currentVideo?.channel
+                    ? {
+                        ...currentVideo.channel,
+                        subscribersCount: Math.max(
+                            0,
+                            (currentVideo.channel.subscribersCount || 0)
+                            + (response.isSubscribed ? 1 : -1)
+                        ),
+                    }
+                    : currentVideo.channel,
+            }));
+        } catch (subscriptionError) {
+            setError(subscriptionError?.message || "Failed to toggle subscribe.");
+        }
+    };
+
+    if (!id) {
+        return (
+            <main className={styles.page}>
+                <div className={styles.loadingCard} role="alert">Video ID is missing.</div>
+            </main>
+        );
+    }
 
     if (loading) {
         return (
@@ -138,7 +232,7 @@ export default function VideoPlayPage() {
         );
     }
 
-    const channelName = video?.channel?.name || video?.owner?.username || "Channel";
+    const channelName = video?.channel?.channelName || video?.channel?.name || video?.owner?.username || "Channel";
     const progress = duration ? (currentTime / duration) * 100 : 0;
 
     return (
@@ -197,6 +291,11 @@ export default function VideoPlayPage() {
                     </article>
 
                     <div className={styles.videoInfo}>
+                        {error && (
+                            <p role="alert" style={{ color: "#ef4444" }}>
+                                {error}
+                            </p>
+                        )}
                         <h1>{video?.title || "Untitled video"}</h1>
                         <p>{formatCount(video?.views)} views <span>•</span> {video?.publishedAt ? new Date(video.publishedAt).toLocaleDateString() : "Recently uploaded"}</p>
 
@@ -211,7 +310,7 @@ export default function VideoPlayPage() {
                             <button
                                 type="button"
                                 className={`${styles.subscribeButton} ${subscribed ? styles.subscribed : ""}`}
-                                onClick={() => setSubscribed((current) => !current)}
+                                onClick={() => toggalSubscribe(video?.channel?._id)}
                             >
                                 {subscribed && <MdCheck />}
                                 {subscribed ? "Subscribed" : "Subscribe"}
