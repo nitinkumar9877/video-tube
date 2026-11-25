@@ -250,6 +250,29 @@ const deleteVideo = async (req, res) => {
                 message: "Missing required field: key"
             });
         }
+
+        const userId = req.user?._id;
+        if (!userId) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized: User not authenticated"
+            });
+        }
+
+        const video = await VideoModel.findById(key);
+        if (!video) {
+            return res.status(404).json({
+                success: false,
+                message: "Video not found"
+            });
+        }
+        if (String(video.owner) !== String(userId)) {
+            return res.status(403).json({
+                success: false,
+                message: "You are not allowed to delete this video"
+            });
+        }
+
         console.log("------------deleteVideoFromEverywhere called------------");
         const result = await deleteVideoFromEverywhere(key);
         return res.status(200).json({
@@ -274,19 +297,15 @@ const updateVideoDetails = async (req, res) => {
     try {
         console.log("------------updateVideoDetails controller called------------");
         const videoId = req.params.key;
-        console.log("1")
         const { title, description, category, tags } = req.body;
-        console.log("2")
         const updateData = {};
-        console.log("3")
         if (title) updateData.title = title;
         if (description) updateData.description = description;
         if (category) updateData.category = category;
         if (tags) updateData.tags = tags;
-        console.log("4")
         console.log("Video Id :", videoId);
+        console.log("Update Data :", updateData);
         const response = await updateVideoDetailsInMongoDB(videoId, updateData);
-        console.log("5")
         if (!response) {
             return res.status(404).json({
                 success: false,
@@ -295,9 +314,6 @@ const updateVideoDetails = async (req, res) => {
         }
 
         const updatedVideo = await VideoModel.findById(videoId).populate("owner", "username").populate("channel", "name");
-        console.log("6");
-        console.log(updatedVideo);
-
         return res.status(200).json({
             success: true,
             message: "Video details updated successfully",
@@ -399,7 +415,7 @@ const likeVideo = async (req, res) => {
 const createVideoComments = async (req, res) => {
     try {
         console.log("------------VideoComments controller called------------");
-        const videoId = req.params;
+        const videoId = req.params.key;
         if (!videoId) {
             return res.status(400).json({
                 success: false,
@@ -423,7 +439,7 @@ const createVideoComments = async (req, res) => {
             });
         };
         console.log("3");
-        const video = await VideoModel.findById(videoId.key);
+        const video = await VideoModel.findById(videoId);
         if (!video) {
             return res.status(404).json({
                 success: false,
@@ -431,17 +447,17 @@ const createVideoComments = async (req, res) => {
             });
         }
         console.log("4");
-        console.log("Video ID:", videoId.key);
+        console.log("Video ID:", videoId);
         console.log("User ID:", userId);
         console.log("Comment:", comment);
         const newComment = await CommentModel.create({
             user: req.user._id,
-            video: videoId.key,
+            video: videoId,
             comment: comment,
         });
 
         const updatedVideo = await VideoModel.findByIdAndUpdate(
-            videoId.key,
+            videoId,
             { $push: { comments: newComment._id } },
             { new: true }
         );
@@ -472,7 +488,7 @@ const createVideoComments = async (req, res) => {
 
         return res.status(500).json({
             success: false,
-            message: "Failed to fetch video comments",
+            message: "Failed to submit video comment",
             error: error,
             errorMsg: process.env.NODE_ENV === "development"
                 ? error.message
@@ -523,20 +539,22 @@ const getVideoComments = async (req, res) => {
 const deleteVideoComments = async (req, res) => {
     try {
         console.log("------------deleteVideoComments controller called------------");
-        const commentId = req.params.commentId;
-        if (!commentId) {
+        const { key, commentId } = req.params;
+        if (!key || !commentId) {
             return res.status(400).json({
                 success: false,
-                message: "Missing required field: commentId"
+                message: "Missing required fields: videoId or commentId"
             });
         };
-        const userId = req.user?._id;
-        if (!userId) {
-            return res.status(401).json({
+
+        const video = await VideoModel.findById(key);
+        if (!video) {
+            return res.status(404).json({
                 success: false,
-                message: "Unauthorized: User not authenticated"
+                message: "Video not found"
             });
         };
+
         const comment = await CommentModel.findById(commentId);
         if (!comment) {
             return res.status(404).json({
@@ -544,22 +562,22 @@ const deleteVideoComments = async (req, res) => {
                 message: "Comment not found"
             });
         };
-        if (comment.user.toString() !== userId.toString()) {
+        // what to check comment id is present in the video comments array or not
+        if (!video.comments.includes(commentId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Comment does not belong to this video"
+            });
+        };
+        if (!comment.user.equals(req.user._id)) {
             return res.status(403).json({
                 success: false,
-                message: "Forbidden: You can only delete your own comments"
+                message: "Unauthorized: You can only delete your own comments"
             });
         };
-        const video = await VideoModel.findById(comment.video);
-        if (!video) {
-            return res.status(404).json({
-                success: false,
-                message: "Video not found"
-            });
-        };
-        video.comments.pull(commentId);
-        await video.save();
+
         await CommentModel.findByIdAndDelete(commentId);
+        await VideoModel.findByIdAndUpdate(key, { $pull: { comments: commentId } });
         return res.status(200).json({
             success: true,
             message: "Comment deleted successfully"
@@ -589,9 +607,7 @@ const getMyLikedVideos = async (req, res) => {
                 message: "Unauthorized: User not authenticated"
             });
         };
-
-        const likedVideos = await userModel.findById(userId).populate("likedVideos");
-
+        const likedVideos = await VideoModel.find({ likes: userId });
         return res.status(200).json({
             success: true,
             message: "Liked videos fetched successfully",
@@ -612,4 +628,55 @@ const getMyLikedVideos = async (req, res) => {
     }
 };
 
-module.exports = { videoUpload, getAllVideos, getVideo, deleteVideo, updateVideoDetails, myVideos, likeVideo, createVideoComments, getVideoComments, deleteVideoComments, getMyLikedVideos };
+const removeLike = async (req, res) => {
+    try {
+        const videoId = req.params.key;
+        const userId = req.user?._id;
+        if (!videoId) {
+            return res.status(400).json({
+                success: false,
+                message: "Missing required field: videoId"
+            });
+        };
+        if (!userId) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized: User not authenticated"
+            });
+        };
+        const video = await VideoModel.findById(videoId);
+        if (!video) {
+            return res.status(404).json({
+                success: false,
+                message: "Video not found"
+            });
+        };
+        if (!video.likes.includes(userId)) {
+            return res.status(400).json({
+                success: false,
+                message: "You have not liked this video"
+            });
+        };
+        video.likes.pull(userId);
+        await video.save();
+        return res.status(200).json({
+            success: true,
+            message: "Like removed successfully",
+            data: video
+        });
+    } catch (error) {
+        console.log("------------------ removeLike error catch block ------------------");
+        printCatchBlockError(error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to remove like",
+            error: error,
+            errorMsg: process.env.NODE_ENV === "development"
+                ? error.message
+                : undefined
+        });
+    }
+};
+
+module.exports = { videoUpload, getAllVideos, getVideo, deleteVideo, updateVideoDetails, myVideos, likeVideo, createVideoComments, getVideoComments, deleteVideoComments, getMyLikedVideos, removeLike };

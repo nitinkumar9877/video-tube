@@ -1,0 +1,514 @@
+.page {
+    min-height: calc(100vh - 64px);
+    background: #f5f6f7;
+    color: #17191c;
+}
+
+.pageWrap {
+    width: min(1120px, calc(100% - 32px));
+    margin: 0 auto;
+    padding: 28px 0 52px;
+}
+
+.backLink {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 20px;
+    color: #5d626a;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.backLink:hover {
+    color: #d9002b;
+}
+
+.backLink svg {
+    width: 18px;
+    height: 18px;
+}
+
+.pageHeading {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 24px;
+}
+
+.headingIcon {
+    display: grid;
+    flex: 0 0 48px;
+    width: 48px;
+    height: 48px;
+    place-items: center;
+    border-radius: 8px;
+    background: #d9002b;
+    color: #fff;
+}
+
+.headingIcon svg {
+    width: 25px;
+    height: 25px;
+}
+
+.eyebrow {
+    margin: 0 0 3px;
+    color: #d9002b;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.pageHeading h1 {
+    margin: 0;
+    font-size: 25px;
+    line-height: 1.2;
+}
+
+.headingText {
+    margin: 5px 0 0;
+    color: #69707a;
+    font-size: 13px;
+}
+
+.editor {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    align-items: start;
+    gap: 16px;
+}
+
+.formPanel,
+.previewPanel {
+    border: 1px solid #e0e2e5;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.formPanel {
+    padding: 25px;
+}
+
+.sectionHeading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 1px solid #eceef0;
+    margin-bottom: 22px;
+    padding-bottom: 17px;
+}
+
+.sectionHeading h2 {
+    margin: 0;
+    font-size: 17px;
+}
+
+.sectionHeading p {
+    margin: 5px 0 0;
+    color: #69707a;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.requiredNote {
+    color: #7a8089;
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.field {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 20px;
+    color: #292d33;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.field:last-child {
+    margin-bottom: 0;
+}
+
+.field > span b {
+    color: #d9002b;
+}
+
+.field input,
+.field textarea,
+.field select {
+    width: 100%;
+    border: 1px solid #d5d8dc;
+    border-radius: 6px;
+    background: #fff;
+    color: #17191c;
+    outline: none;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 400;
+}
+
+.field input,
+.field select {
+    height: 44px;
+    padding: 0 12px;
+}
+
+.field textarea {
+    min-height: 150px;
+    padding: 12px;
+    line-height: 1.55;
+    resize: vertical;
+}
+
+.field input:focus,
+.field textarea:focus,
+.field select:focus,
+.tagInputWrap:focus-within {
+    border-color: #d9002b;
+    box-shadow: 0 0 0 3px rgba(217, 0, 43, 0.09);
+}
+
+.field > small {
+    justify-self: end;
+    color: #818791;
+    font-size: 11px;
+    font-weight: 400;
+}
+
+.tagInputWrap {
+    display: flex;
+    height: 44px;
+    align-items: center;
+    gap: 9px;
+    border: 1px solid #d5d8dc;
+    border-radius: 6px;
+    padding: 0 12px;
+}
+
+.tagInputWrap > svg {
+    flex: 0 0 17px;
+    width: 17px;
+    height: 17px;
+    color: #727984;
+}
+
+.tagInputWrap input {
+    height: 40px;
+    border: 0;
+    padding: 0;
+    box-shadow: none;
+}
+
+.tagList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.tag {
+    display: inline-flex;
+    min-height: 29px;
+    align-items: center;
+    gap: 5px;
+    border: 1px solid #e4e6e9;
+    border-radius: 5px;
+    background: #f6f7f8;
+    padding: 3px 6px 3px 9px;
+    color: #41464e;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.tag button {
+    display: grid;
+    width: 20px;
+    height: 20px;
+    place-items: center;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: #777e88;
+    cursor: pointer;
+}
+
+.tag button:hover {
+    background: #e8eaed;
+    color: #c60027;
+}
+
+.tag button svg {
+    width: 14px;
+    height: 14px;
+}
+
+.field .fieldHint {
+    justify-self: start;
+}
+
+.previewPanel {
+    position: sticky;
+    top: 84px;
+    overflow: hidden;
+}
+
+.previewHeading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 16px;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.previewStatus {
+    border-radius: 4px;
+    background: #f1f2f4;
+    padding: 4px 7px;
+    color: #69707a;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.thumbnail {
+    position: relative;
+    display: grid;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    place-items: center;
+    background: #202328;
+    color: #aeb3ba;
+}
+
+.thumbnail > img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.thumbnail > svg {
+    width: 42px;
+    height: 42px;
+}
+
+.thumbnail > span {
+    position: absolute;
+    right: 7px;
+    bottom: 7px;
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.82);
+    padding: 3px 5px;
+    color: #fff;
+    font-size: 11px;
+}
+
+.previewDetails {
+    padding: 14px 16px 13px;
+}
+
+.previewDetails h2 {
+    display: -webkit-box;
+    overflow: hidden;
+    margin: 0 0 8px;
+    font-size: 14px;
+    line-height: 1.4;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+}
+
+.previewDetails p {
+    margin: 4px 0 0;
+    color: #707781;
+    font-size: 11px;
+}
+
+.previewDescription {
+    border-top: 1px solid #eceef0;
+    padding: 13px 16px 16px;
+}
+
+.previewDescription strong {
+    font-size: 11px;
+}
+
+.previewDescription p {
+    display: -webkit-box;
+    overflow: hidden;
+    margin: 6px 0 0;
+    color: #707781;
+    font-size: 11px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
+}
+
+.formActionsSubmit {
+    display: flex;
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+    gap: 9px;
+    border-top: 1px solid #e0e2e5;
+    padding-top: 16px;
+}
+
+.cancelButton,
+.saveButton,
+.deleteButton {
+    display: inline-flex;
+    min-width: 110px;
+    height: 42px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    padding: 0 16px;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.cancelButton {
+    border: 1px solid #d5d8dc;
+    background: #fff;
+    color: #4b515a;
+}
+
+.cancelButton:hover {
+    background: #f3f4f5;
+}
+
+.deleteButton {
+    margin-right: auto;
+    border: 1px solid #e8b8bf;
+    background: #fff;
+    color: #b42338;
+    cursor: pointer;
+}
+
+.deleteButton:hover:not(:disabled) {
+    border-color: #b42338;
+    background: #fff5f6;
+}
+
+.saveButton {
+    border: 0;
+    background: #d9002b;
+    color: #fff;
+    cursor: pointer;
+}
+
+.saveButton:hover:not(:disabled) {
+    background: #bb0025;
+}
+
+.saveButton:disabled,
+.deleteButton:disabled {
+    cursor: wait;
+    opacity: 0.65;
+}
+
+.errorMessage,
+.successMessage,
+.stateMessage {
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-size: 13px;
+}
+
+.errorMessage {
+    border: 1px solid #f4c7cd;
+    background: #fff5f6;
+    color: #a3152b;
+}
+
+.successMessage {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    border: 1px solid #b9e2c4;
+    background: #f2fbf4;
+    color: #256c38;
+}
+
+.successMessage svg {
+    width: 17px;
+    height: 17px;
+}
+
+.stateMessage {
+    border: 1px solid #e0e2e5;
+    background: #fff;
+    color: #626873;
+    text-align: center;
+}
+
+@media (max-width: 800px) {
+    .editor {
+        grid-template-columns: minmax(0, 1fr) 270px;
+    }
+
+    .formPanel {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 640px) {
+    .pageWrap {
+        width: min(100% - 24px, 520px);
+        padding-top: 20px;
+    }
+
+    .pageHeading {
+        align-items: flex-start;
+    }
+
+    .pageHeading h1 {
+        font-size: 21px;
+    }
+
+    .editor {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .previewPanel {
+        position: static;
+        grid-row: 1;
+    }
+
+    .formActionsSubmit {
+        grid-column: auto;
+        flex-wrap: wrap;
+        position: sticky;
+        bottom: 0;
+        z-index: 3;
+        border: 1px solid #e0e2e5;
+        border-radius: 7px;
+        background: rgba(255, 255, 255, 0.96);
+        padding: 9px;
+    }
+
+    .deleteButton {
+        flex: 1 1 100%;
+        margin-right: 0;
+    }
+
+    .cancelButton,
+    .saveButton {
+        flex: 1;
+    }
+}
+
+
+
+.formActionsSubmit {
+    display: flex;
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+    gap: 9px;
+    border-top: 1px solid #e0e2e5;
+    padding-top: 16px;
+}

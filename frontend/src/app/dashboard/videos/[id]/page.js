@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { MdPlayArrow, MdPause, MdVolumeUp, MdVolumeOff, MdThumbUp, MdThumbUpOffAlt, MdShare, MdBookmarkBorder, MdMoreHoriz, MdCheck, } from "react-icons/md";
+import { MdDelete } from "react-icons/md";
 import styles from "../../../../components/styleSheets/videoPlay.module.css";
-import { doLikeVideo, getVideoById } from "@/services/videos";
+import { commentDelete, doLikeVideo, getComments, getVideoById, submitVideoComment } from "@/services/videos";
 import { checkAlreadyLogin, FetchUserData } from "@/services/AuthUser";
 import { toggalSubscribeChannel } from "@/services/channel.services";
 
@@ -24,6 +25,19 @@ const formatCount = (count = 0) => {
     return String(count);
 };
 
+const addCommentOwnership = (comments, userId = "") =>
+    Array.isArray(comments)
+        ? comments.map((comment) => {
+            const commentUserId = typeof comment.user === "object"
+                ? comment.user?._id
+                : comment.user;
+            return {
+                ...comment,
+                myComment: Boolean(userId) && String(commentUserId || "") === String(userId),
+            };
+        })
+        : [];
+
 export default function VideoPlayPage() {
     const router = useRouter();
     const params = useParams();
@@ -39,6 +53,9 @@ export default function VideoPlayPage() {
     const [liked, setLiked] = useState(false);
     const [likeCount, setLikeCount] = useState();
     const [subscribed, setSubscribed] = useState();
+    const [commentText, setCommentText] = useState("");
+    const [submittingComment, setSubmittingComment] = useState(false);
+    const [currentUserId, setCurrentUserId] = useState("");
 
     useEffect(() => {
         if (!id) return;
@@ -55,7 +72,15 @@ export default function VideoPlayPage() {
                     setVideo(data);
                     setLikeCount(Array.isArray(data.likes) ? data.likes.length : 0);
                 }
-
+                const getVideoAllComments = await getComments(id);
+                if (getVideoAllComments?.success) {
+                    setVideo((prevVideo) => ({
+                        ...prevVideo,
+                        comments: addCommentOwnership(getVideoAllComments?.data),
+                    }));
+                } else {
+                    console.error("Failed to fetch comments:", getVideoAllComments?.message);
+                };
                 const checkLogin = await checkAlreadyLogin();
                 if (checkLogin?.success) {
                     const userResponse = await FetchUserData();
@@ -63,6 +88,7 @@ export default function VideoPlayPage() {
 
                     if (user) {
                         const userId = String(user._id || "");
+                        setCurrentUserId(userId);
                         const likedByUser = Array.isArray(data?.likes)
                             && data.likes.some((like) => {
                                 const likeId = typeof like === "object" ? like._id : like;
@@ -79,14 +105,24 @@ export default function VideoPlayPage() {
                         setSubscribed(
                             subscribedChannelIds.includes(String(data?.channel?._id || ""))
                         );
+
+                        setVideo((prevVideo) => ({
+                            ...prevVideo,
+                            comments: addCommentOwnership(prevVideo.comments, userId),
+                        }));
+
                     } else {
+                        setCurrentUserId("");
                         setLiked(false);
                         setSubscribed(false);
                     }
                 } else {
+                    setCurrentUserId("");
                     setLiked(false);
                     setSubscribed(false);
                 }
+                { console.log("Video data loaded:", video) }
+
             } catch (loadError) {
                 setVideo({});
                 setLikeCount(0);
@@ -170,6 +206,8 @@ export default function VideoPlayPage() {
         }
     };
 
+    // http://localhost:1111/api/auth/videos/6b0035e9b032860cf4e28976/comment
+
     const toggalSubscribe = async (channelId) => {
         if (!channelId) {
             setError("Channel information is unavailable.");
@@ -213,6 +251,76 @@ export default function VideoPlayPage() {
             }));
         } catch (subscriptionError) {
             setError(subscriptionError?.message || "Failed to toggle subscribe.");
+        }
+    };
+
+    const submitComment = async (event) => {
+        event.preventDefault();
+        const comment = commentText.trim();
+        if (!comment || !video?._id || submittingComment) return;
+
+        setSubmittingComment(true);
+        try {
+            const checkLogin = await checkAlreadyLogin();
+            if (!checkLogin?.success) {
+                router.push("/login");
+                return;
+            }
+
+            const response = await submitVideoComment(comment, video._id);
+            if (!response?.success) {
+                setError(response?.message || "Failed to submit comment.");
+                return;
+            }
+
+            setCommentText("");
+            setError("");
+            const getVideoAllComments = await getComments(id);
+            if (getVideoAllComments?.success) {
+                setVideo((prevVideo) => ({
+                    ...prevVideo,
+                    comments: addCommentOwnership(getVideoAllComments?.data, currentUserId),
+                }));
+            } else {
+                console.error("Failed to fetch comments:", getVideoAllComments?.message);
+            };
+
+        } catch (commentError) {
+            setError(commentError?.message || "Failed to submit comment.");
+        } finally {
+            setSubmittingComment(false);
+        }
+    };
+
+    const deleteComment = (commentId) => async () => {
+        if (!commentId || !video?._id) return;
+
+        try {
+            const checkLogin = await checkAlreadyLogin();
+            if (!checkLogin?.success) {
+                router.push("/login");
+                return;
+            }
+            
+            const response = await commentDelete(video._id, commentId);
+            if (!response?.success) {
+                setError(response?.message || "Failed to delete comment.");
+                return;
+            }
+
+            setError("");
+            const getVideoAllComments = await getComments(id);
+            if (getVideoAllComments?.success) {
+                setVideo((prevVideo) => ({
+                    ...prevVideo,
+                    comments: addCommentOwnership(getVideoAllComments?.data, currentUserId),
+                }));
+            } else {
+                console.error("Failed to fetch comments:", getVideoAllComments?.message);
+            };
+
+        } catch (deleteError) {
+            setError(deleteError?.message || "Failed to delete comment.");
         }
     };
 
@@ -341,6 +449,53 @@ export default function VideoPlayPage() {
                             <div><strong>{formatCount(video?.views)} views</strong><span>{video?.category || "Video"}</span></div>
                             <p>{video?.description || "No description available."}</p>
                         </div>
+                    </div>
+
+                    <div className={styles.commentDiv}>
+                        <form onSubmit={submitComment} className={styles.commentForm}>
+                            <input
+                                name="comment"
+                                value={commentText}
+                                onChange={(event) => setCommentText(event.target.value)}
+                                type="text"
+                                placeholder="Enter your comment for current video"
+                                className={styles.commentInput}
+                                maxLength={2000}
+                                aria-label="Comment"
+                            />
+                            <button type="submit" disabled={!commentText.trim() || submittingComment}>
+                                {submittingComment ? "Submitting..." : "Submit"}
+                            </button>
+                        </form>
+
+                        <div className={styles.commentList}>
+                            {video?.comments?.length > 0 ? (
+                                video.comments.map((comment) => (
+                                    <div key={comment._id} className={styles.commentItem}>
+                                        <div className={styles.commentHeader}>
+                                            <div className={styles.commentUser}>
+                                                {comment.user?.profilePictureUrl ? (
+                                                    <img className={styles.commentAvatar} src={comment.user.profilePictureUrl} alt={`${comment.user.username}'s profile picture`} width={34} height={34} />
+                                                ) : (
+                                                    <div className={styles.commentAvatar}>{comment.user?.username?.charAt(0).toUpperCase() || "A"}</div>
+                                                )}
+                                                <strong>{comment.user?.username || "Anonymous"}</strong>
+                                            </div>
+                                            {comment.myComment && (
+                                                <span className={styles.commentOwnerBadge}>
+                                                    <MdDelete onClick={deleteComment(comment._id)} size={24} className={styles.deleteIcon} />
+                                                </span>
+                                            )}
+                                        </div>
+                                        <p className={styles.commentText}>{comment.comment}</p>
+                                        <span className={styles.commentDate}>{new Date(comment.createdAt).toLocaleString()}</span>
+                                    </div>
+                                ))
+                            ) : (
+                                <p>No comments yet. Be the first to comment!</p>
+                            )}
+                        </div>
+
                     </div>
                 </section>
 

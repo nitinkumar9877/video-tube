@@ -2,40 +2,114 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { MdClose, MdGridView, MdMoreVert, MdSearch, MdThumbUp, MdViewList, } from "react-icons/md";
+import { useRouter } from "next/navigation";
+import { MdClose, MdGridView, MdSearch, MdThumbUp, MdViewList } from "react-icons/md";
 import styles from "@/components/styleSheets/liked.module.css";
+import { getMyLikedVideos, removeLike } from "@/services/videos";
+import { checkAlreadyLogin } from "@/services/AuthUser";
 
-const demoVideos = [
-    { id: 1, title: "A Calm Journey Through the Mountain Valley", channel: "Northbound", views: "1.2M views", age: "2 months ago", duration: "18:24", accent: "#2563eb", likes: "48K" },
-    { id: 2, title: "Building a Modern Design System in React", channel: "Design with Code", views: "842K views", age: "3 weeks ago", duration: "24:08", accent: "#ef4444", likes: "31K" },
-    { id: 3, title: "Morning in the Highlands", channel: "Wander Stories", views: "412K views", age: "1 month ago", duration: "12:41", accent: "#059669", likes: "22K" },
-    { id: 4, title: "Three Simple Meals for Busy Weeknights", channel: "Kitchen Notes", views: "326K views", age: "5 days ago", duration: "16:52", accent: "#ea580c", likes: "18K" },
-    { id: 5, title: "JavaScript Concepts Explained Visually", channel: "Code Explained", views: "680K views", age: "2 weeks ago", duration: "21:15", accent: "#0891b2", likes: "54K" },
-    { id: 6, title: "The Most Beautiful Train Journeys", channel: "Outside the Map", views: "2.1M views", age: "1 month ago", duration: "32:06", accent: "#7c3aed", likes: "96K" },
-];
+const getChannelName = (channel) => {
+    if (!channel || typeof channel !== "object") return "Channel";
+    return channel.channelName || channel.name || "Channel";
+};
+
+const formatCount = (count = 0) => {
+    const value = Number(count) || 0;
+    if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+    if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
+    return String(value);
+};
+
+const formatDuration = (duration = 0) => {
+    const totalSeconds = Number(duration);
+    if (!Number.isFinite(totalSeconds) || totalSeconds < 0) return "0:00";
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = Math.floor(totalSeconds % 60);
+    return hours
+        ? `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
+        : `${minutes}:${String(seconds).padStart(2, "0")}`;
+};
+
+const formatPublishedDate = (date) => {
+    if (!date) return "Recently uploaded";
+    const publishedAt = new Date(date);
+    return Number.isNaN(publishedAt.getTime())
+        ? "Recently uploaded"
+        : publishedAt.toLocaleDateString();
+};
 
 export default function LikesPage() {
-    const [likedVideos, setLikedVideos] = useState(demoVideos);
+    const router = useRouter();
+    const [likedVideos, setLikedVideos] = useState([]);
     const [query, setQuery] = useState("");
     const [view, setView] = useState("grid");
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+    const [removingVideoId, setRemovingVideoId] = useState("");
 
     const filteredVideos = useMemo(() => {
         const normalizedQuery = query.trim().toLowerCase();
         if (!normalizedQuery) return likedVideos;
 
         return likedVideos.filter((video) =>
-            `${video.title} ${video.channel}`.toLowerCase().includes(normalizedQuery)
+            `${video.title || ""} ${getChannelName(video.channel)}`.toLowerCase().includes(normalizedQuery)
         );
     }, [likedVideos, query]);
 
-    const removeLikedVideo = (videoId) => {
-        setLikedVideos((current) => current.filter((video) => video.id !== videoId));
+    const removeLikedVideo = async (videoId) => {
+        if (!videoId || removingVideoId) return;
+        setRemovingVideoId(String(videoId));
+
+        try {
+            const response = await removeLike(videoId);
+            if (!response?.success) {
+                throw new Error(response?.message || "Failed to remove liked video.");
+            }
+
+            setLikedVideos((current) => current.filter(
+                (video) => String(video._id || video.id) !== String(videoId)
+            ));
+            setError("");
+        } catch (removeError) {
+            setError(removeError?.message || "Failed to remove liked video.");
+        } finally {
+            setRemovingVideoId("");
+        }
     };
 
     useEffect(() => {
+        let isActive = true;
 
-        const likeVideoApiResponse = async 
-    },[]);
+        const loadLikedVideos = async () => {
+            try {
+                const loginResponse = await checkAlreadyLogin();
+                if (!loginResponse?.success) {
+                    router.push("/login");
+                    return;
+                }
+
+                const response = await getMyLikedVideos();
+                if (!response?.success) {
+                    throw new Error(response?.message || "Failed to fetch liked videos.");
+                }
+                if (isActive) {
+                    setLikedVideos(Array.isArray(response.data) ? response.data : []);
+                }
+            } catch (loadError) {
+                if (isActive) {
+                    setError(loadError?.message || "Failed to fetch liked videos.");
+                }
+            } finally {
+                if (isActive) setLoading(false);
+            }
+        };
+
+        loadLikedVideos();
+        return () => {
+            isActive = false;
+        };
+    }, [router]);
 
     return (
         <main className={styles.page}>
@@ -89,48 +163,65 @@ export default function LikesPage() {
                     {query && <span>{filteredVideos.length} matches</span>}
                 </div>
 
-                {filteredVideos.length > 0 ? (
+                {error && <p role="alert">{error}</p>}
+
+                {loading ? (
+                    <div className={styles.emptyState}>Loading liked videos...</div>
+                ) : filteredVideos.length > 0 ? (
                     <section
                         className={`${styles.videoCollection} ${view === "list" ? styles.listView : styles.gridView}`}
                         aria-label="Liked videos"
                     >
-                        {filteredVideos.map((video) => (
-                            <article className={styles.videoCard} key={video.id}>
+                        {filteredVideos.map((video) => {
+                            const videoId = video._id || video.id;
+                            const channelName = getChannelName(video.channel);
+                            const title = video.title || "Untitled video";
+
+                            return (
+                            <article className={styles.videoCard} key={videoId}>
                                 <Link
-                                    href="/"
+                                    href={`/dashboard/videos/${encodeURIComponent(String(videoId))}`}
                                     className={styles.thumbnail}
-                                    style={{ "--thumbnail-accent": video.accent }}
-                                    aria-label={`Watch ${video.title}`}
+                                    aria-label={`Watch ${title}`}
                                 >
-                                    <div className={styles.thumbnailPattern} />
-                                    <span className={styles.duration}>{video.duration}</span>
+                                    {video.thumbnailUrl ? (
+                                        <img
+                                            src={video.thumbnailUrl}
+                                            alt=""
+                                            style={{
+                                                position: "absolute",
+                                                inset: 0,
+                                                width: "100%",
+                                                height: "100%",
+                                                objectFit: "cover",
+                                            }}
+                                        />
+                                    ) : <div className={styles.thumbnailPattern} />}
+                                    <span className={styles.duration}>{formatDuration(video.duration)}</span>
                                 </Link>
 
                                 <div className={styles.cardBody}>
-                                    <div className={styles.channelAvatar} style={{ "--avatar-accent": video.accent }}>
-                                        {video.channel.charAt(0).toUpperCase()}
-                                    </div>
+                                    <div className={styles.channelAvatar}>{channelName.charAt(0).toUpperCase()}</div>
                                     <div className={styles.videoDetails}>
-                                        <Link href="/" className={styles.videoTitle}>{video.title}</Link>
-                                        <p>{video.channel}</p>
-                                        <p>{video.views} · {video.age}</p>
+                                        <Link href={`/dashboard/videos/${encodeURIComponent(String(videoId))}`} className={styles.videoTitle}>{title}</Link>
+                                        <p>{channelName}</p>
+                                        <p>{formatCount(video.views)} views · {formatPublishedDate(video.publishedAt || video.createdAt)}</p>
                                     </div>
                                     <div className={styles.cardActions}>
-                                        <button type="button" className={styles.iconButton} aria-label="More options">
-                                            <MdMoreVert />
-                                        </button>
                                         <button
                                             type="button"
                                             className={styles.removeButton}
-                                            onClick={() => removeLikedVideo(video.id)}
-                                            aria-label={`Remove ${video.title} from liked videos`}
+                                            onClick={() => removeLikedVideo(videoId)}
+                                            disabled={Boolean(removingVideoId)}
+                                            aria-label={`Remove ${title} from liked videos`}
                                         >
                                             <MdClose />
                                         </button>
                                     </div>
                                 </div>
                             </article>
-                        ))}
+                            );
+                        })}
                     </section>
                 ) : (
                     <div className={styles.emptyState}>

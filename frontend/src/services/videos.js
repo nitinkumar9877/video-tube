@@ -1,9 +1,10 @@
 import axios from "axios";
 import api from "@/services/api";
+
 export const getAllVideos = async () => {
     try {
         const url = `${process.env.NEXT_PUBLIC_API_URL}${process.env.NEXT_PUBLIC_AUTH_API_PATH}videos`;
-        const response = await axios.get(url,{
+        const response = await axios.get(url, {
             withCredentials: true
         });
         console.log("Response from getAllVideos:", response.data);
@@ -14,7 +15,6 @@ export const getAllVideos = async () => {
     }
 };
 
-// http://localhost:1111/api/auth/my-videos
 export const getMyVideos = async () => {
     try {
         const response = await api.get("/api/auth/my-videos", {
@@ -81,7 +81,6 @@ export const getVideoById = async (id) => {
     }
 }
 
-// http://localhost:1111/api/auth/videos/6afd5067b8b1c2481c712e80/like
 export const doLikeVideo = async (videoId) => {
     try {
         const videoUrl = `${process.env.NEXT_PUBLIC_API_URL}${process.env.NEXT_PUBLIC_AUTH_API_PATH}videos/${videoId}/like`;
@@ -97,6 +96,153 @@ export const doLikeVideo = async (videoId) => {
         return {
             success: false,
             message: error.response?.data?.message || "Failed to like video"
+        };
+    }
+};
+
+export const submitVideoComment = async (comment, videoId) => {
+    try {
+        const commentUrl = `${process.env.NEXT_PUBLIC_API_URL}${process.env.NEXT_PUBLIC_AUTH_API_PATH}videos/${videoId}/comment`;
+        const response = await axios.post(commentUrl, { comment }, {
+            withCredentials: true
+        });
+        if (!response.data.success) {
+            return { success: false, message: "Failed to submit comment" };
+        }
+        return response.data;
+    } catch (error) {
+        console.error("Error submitting comment:", error);
+        return {
+            success: false,
+            message: error.response?.data?.message || "Failed to submit comment"
+        };
+    }
+}
+
+export const getComments = async (videoId) => {
+    try {
+        const commentsUrl = `${process.env.NEXT_PUBLIC_API_URL}${process.env.NEXT_PUBLIC_AUTH_API_PATH}videos/${videoId}/comments`;
+        const response = await axios.get(commentsUrl, {
+            withCredentials: true
+        });
+        if (!response.data.success) {
+            return { success: false, message: "Failed to fetch comments" };
+        }
+
+        for (const comment of response.data.data) {
+            if (comment.user) {
+                const userResponse = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}${process.env.NEXT_PUBLIC_AUTH_API_PATH}users/${comment.user}`, {
+                    withCredentials: true
+                });
+                if (userResponse.data.success) {
+                    comment.user = userResponse.data.data.user;
+                } else {
+                    console.error(`Failed to fetch user data for comment ID ${comment._id}`);
+                }
+            }
+        };
+        console.log("Response from getComments:", response.data);
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching comments:", error);
+        return {
+            success: false,
+            message: error.response?.data?.message || "Failed to fetch comments"
+        };
+    }
+};
+
+export const commentDelete = async (videoId, commentId) => {
+    try {
+        const deleteUrl = `${process.env.NEXT_PUBLIC_API_URL}${process.env.NEXT_PUBLIC_AUTH_API_PATH}videos/${videoId}/comment/${commentId}`;
+        const response = await axios.delete(deleteUrl, {
+            withCredentials: true
+        });
+        if (!response.data.success) {
+            return { success: false, message: "Failed to delete comment" };
+        }
+        return response.data;
+    } catch (error) {
+        console.error("Error deleting comment:", error);
+        return {
+            success: false,
+            message: error.response?.data?.message || "Failed to delete comment"
+        };
+    }
+};
+
+// http://localhost:1111/api/auth/my-liked-videos
+export const getMyLikedVideos = async () => {
+    try {
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}${process.env.NEXT_PUBLIC_AUTH_API_PATH}my-liked-videos`, {
+            withCredentials: true
+        });
+        if (!response.data.success) {
+            return { success: false, message: "Failed to fetch liked videos" };
+        }
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching liked videos:", error);
+        return {
+            success: false,
+            message: error.response?.data?.message || "Failed to fetch liked videos"
+        };
+    }
+};
+
+export const removeLike = async (videoId) => {
+    try {
+        const removeLikeUrl = `${process.env.NEXT_PUBLIC_API_URL}${process.env.NEXT_PUBLIC_AUTH_API_PATH}videos/${videoId}/remove-like`;
+        const response = await axios.delete(removeLikeUrl, {
+            withCredentials: true
+        });
+        if (!response.data.success) {
+            return { success: false, message: "Failed to remove like from video" };
+        }
+        return response.data;
+    } catch (error) {
+        console.error("Error removing like from video:", error);
+        return {
+            success: false,
+            message: error.response?.data?.message || "Failed to remove like from video"
+        };
+    }
+};
+
+export const editVideoDetails = async (videoId, updatedDetails) => {
+    try {
+        const editUrl = `${process.env.NEXT_PUBLIC_API_URL}${process.env.NEXT_PUBLIC_AUTH_API_PATH}videos/${videoId}`;
+        const response = await axios.patch(editUrl, updatedDetails, {
+            withCredentials: true
+        });
+        if (!response.data.success) {
+            return { success: false, message: "Failed to update video details" };
+        }
+        return response.data;
+    } catch (error) {
+        console.error("Error updating video details:", error);
+        return {
+            success: false,
+            message: error.response?.data?.message || "Failed to update video details"
+        };
+    }
+};
+
+export const deleteVideo = async (videoId) => {
+    try {
+        const deleteUrl = `${process.env.NEXT_PUBLIC_API_URL}${process.env.NEXT_PUBLIC_AUTH_API_PATH}videos/${videoId}`;
+        const response = await axios.delete(deleteUrl, {
+            withCredentials: true
+        });
+        if (!response.data.success) {
+            return { success: false, message: "Failed to delete video" };
+        }
+        return response.data;
+    } catch (error) {
+        console.error("Error deleting video:", error);
+        return {
+            success: false,
+            message: error.response?.data?.message || "Failed to delete video"
         };
     }
 };

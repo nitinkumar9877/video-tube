@@ -438,4 +438,44 @@ const myProfile = async (req, res) => {
     }
 };
 
-module.exports = { signUp, login, logout, refreshToken, myProfile };
+const getUserProfile = async (req, res) => {
+    try {
+        const userId = req.params.userId;
+        if (!userId) {
+            return res.status(400).json({
+                success: false,
+                message: "User ID is required"
+            });
+        }
+
+        const user = await userModel.findById(userId);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "User profile fetched successfully",
+            data: {
+                user: {
+                    _id: user._id,
+                    username: user.username,
+                    email: user.email,
+                    profilePictureUrl: user.profilePictureUrl,
+                    subscribedChannels: user.subscribedChannels || [],
+                }
+            }
+        });
+    } catch (error) {
+        console.error("Error fetching user profile:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
+    }
+};
+
+module.exports = { signUp, login, logout, refreshToken, myProfile, getUserProfile };

@@ -182,11 +182,20 @@ Callers should tolerate:
 - `uploadVideo(videoData)`: POST multipart protected `/api/auth/channels/upload-video`.
 - `getVideoById(id)`: GET public/dynamic video endpoint and increments backend view count.
 - `doLikeVideo(videoId)`: POST protected like endpoint.
+- `submitVideoComment(comment, videoId)`: POST `{ comment }` to the protected comment endpoint.
+- `getComments(videoId)`: GET comments, then resolves each author through `/users/:userId`.
+- `commentDelete(videoId, commentId)`: DELETE a comment.
+- `getMyLikedVideos()`: GET the authenticated user's liked videos.
+- `removeLike(videoId)`: DELETE the like relationship without deleting the video.
+- `editVideoDetails(videoId, updatedDetails)`: PATCH title/description/category/tags to the video endpoint.
+- `deleteVideo(videoId)`: DELETE the video endpoint.
 
 Video page callers should handle `success: false`, missing `data`, and backend error text. Multipart upload payload fields must match:
 - `video`;
 - `thumbnailImage`;
 - title, description, category, duration, tags, visibility, and optional channelId.
+
+The `/dashboard/videos/[id]/edit` page checks login, loads existing video metadata, edits title/description/category/tags, previews the current thumbnail, and submits changes through `editVideoDetails`. Its delete action confirms before calling `deleteVideo`. Backend limitations affecting these flows are listed in `../backend/Agent.md`; in particular, the current update service rejects `category` and does not verify video ownership.
 
 ## Main Content Pages
 
@@ -197,7 +206,8 @@ Video page callers should handle `success: false`, missing `data`, and backend e
 - My videos: loads the owner's video list.
 - Upload: builds a `FormData` payload for video and thumbnail upload.
 - Subscriptions: fetches subscribed channel data.
-- History/liked: page-specific local or API-driven UI based on current implementation.
+- History: page-specific watch-history UI.
+- Liked videos: `/user/liked` checks login, loads `/my-liked-videos`, supports title/channel search and grid/list views, and removes likes through `removeLike`.
 - Dashboard routes: management surfaces for channel and videos, including dynamic edit/detail pages.
 
 Read the specific page before changing its behavior because route logic and UI state are not centralized.
@@ -235,6 +245,10 @@ Current important contracts:
 - protected requests rely on HTTP-only cookies and CORS credentials;
 - channel APIs use `channel`, `channels`, or `data.channel` shapes in different responses;
 - video list/detail/upload APIs use `data` arrays/objects;
+- comment creation sends `{ comment }`; comment reads return comment documents and the frontend resolves author profiles;
+- liked-video reads return full video documents in `data`; removing an item uses the dedicated DELETE `/videos/:key/remove-like` route;
+- video metadata edits send `{ title, description, category, tags }` through PATCH `/videos/:key`;
+- video deletion uses DELETE `/videos/:key` and the backend checks that the authenticated user owns the video;
 - duplicate auth failures should return HTTP 409 and may include `code`/`keyPattern`;
 - Google auth expects `{ credential }` and returns a public user shape plus a cookie session.
 
@@ -266,9 +280,8 @@ After every frontend change:
 
 ## Recent Confirmed State
 
-- The dynamic video player page uses `video.channel.channelName` for the channel label, checks authentication before subscription actions, and passes `video.channel._id` to the subscribe API.
-- The video page and like service synchronize like state/count from the backend `data.isLiked` and `data.likesCount` response fields.
-- Remote `next/image` sources are allowed over HTTP and HTTPS from wildcard hostnames in `next.config.js`.
-- The production build previously failed because the register page imported nonexistent `GoogleLogin.jsx` and rendered `<handleGoogleSuccess />`.
-- The register page now imports `GoogleAuth.jsx` and renders `<GoogleLoginButton />` as the actual component.
-- `npm run build` has successfully completed after that import correction.
+- The video detail page supports likes, comments, subscriptions, and owner-only comment controls; ownership is represented by each loaded comment's `myComment` flag.
+- The liked-videos page uses API-backed load/unlike operations and expects video documents with `_id`, `title`, `thumbnailUrl`, `duration`, `views`, and optional channel metadata.
+- The edit-video route is API-backed and offers metadata editing plus confirmed deletion; it uses `src/components/styleSheets/editVideo.module.css`.
+- `next.config.js` allows remote `next/image` sources over HTTP and HTTPS from wildcard hostnames. Existing pages may still use plain `<img>` and produce an ESLint warning.
+- Frontend scripts are `npm run dev`, `npm run build`, `npm run start`, and `npm run lint`.

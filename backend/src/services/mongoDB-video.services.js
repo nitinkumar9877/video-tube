@@ -121,11 +121,13 @@ const updateVideoDetailsInMongoDB = async (videoId, updateData) => {
     console.log("55")
 
     // Validate updateData fields
-    const allowedFields = ["title", "description", "tags", "visibility"];
-
-    const isValidUpdate = Object.keys(updateData).every((key) =>
-        allowedFields.includes(key)
-    );
+    const allowedFields = ["title", "description", "category", "tags"];
+    console.log("Allowed Fields :", allowedFields)
+    const isValidUpdate = Object.keys(updateData).every((key) => allowedFields.includes(key));
+    console.log("Is Valid Update :", isValidUpdate)
+    if (!isValidUpdate) {
+        throw new Error("Invalid fields in update data");
+    }
     console.log("66")
 
     if (!isValidUpdate) {

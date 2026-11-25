@@ -36,21 +36,32 @@ Public routes:
 - `POST /register-user`: create a local account.
 - `POST /login`: authenticate email/password and create cookie-backed sessions.
 - `POST /logout`: clear access and refresh cookies.
-- `POST /refresh-token`: refresh/validate the user session using refresh-token middleware.
 - `POST /Google-Register`: verify a Google credential and create/link a user/session.
 - `GET /videos`: list videos.
 - `GET /videos/:id`: retrieve and increment a video's view count.
+- `GET /videos/:key/comments`: list comments for a video.
+- `GET /users/:userId`: return a user profile used by the comments UI.
+
+Refresh-token route:
+- `POST /refresh-token`: validates the refresh-token cookie through `refreshTokenValidation`, then refreshes the session.
 
 Access-token-protected routes:
 - `POST /channels`: create a channel; accepts multipart field `Image`.
 - `POST /channels/upload-video`: upload video plus thumbnail; accepts multipart fields `video` and `thumbnailImage`.
 - `POST /videos/:key/like`: like a video by video key/id.
+- `POST /videos/:key/comment`: add a comment; request body contains `comment`.
+- `POST /channels/:channelId/subscribeAndUnsubscribe`: toggle channel subscription.
 - `GET /myProfile`: return the authenticated user profile.
 - `GET /channels/me`: return the authenticated user's channel, or `channel: null`.
 - `GET /subscribed-channels`: return valid subscribed channels and remove stale subscriptions.
 - `GET /my-videos`: return videos owned by the authenticated user.
+- `GET /my-liked-videos`: return videos liked by the authenticated user.
 - `PATCH /videos/:key`: update video details.
-- `DELETE /videos/:key`: delete a video and associated stored objects/data.
+- `DELETE /videos/:key`: delete the video after checking that the authenticated user owns it.
+- `DELETE /videos/:key/comment/:commentId`: delete a comment.
+- `DELETE /videos/:key/remove-like`: remove the authenticated user's like.
+
+Legacy route note: `GET /my-videos/:id` is also mounted to `myVideos` without `accessTokenValidation`; do not assume it has the same protection as `GET /my-videos`.
 
 The comments and route names show that the project evolved over time. Preserve or explicitly document route compatibility when changing route names.
 
@@ -178,6 +189,14 @@ Fields:
 - `cloudfare.services.js`: legacy Cloudflare upload service, currently not mounted in the active video upload path.
 - `imageKit.services.js`: ImageKit upload/deletion helper.
 - `cloudinary.config.js`: Cloudinary upload helper.
+
+### Video edit/delete contracts and limitations
+
+- `PATCH /videos/:key` reads `title`, `description`, `category`, and `tags` in the controller. However, `updateVideoDetailsInMongoDB` currently allows only `title`, `description`, `tags`, and `visibility`, so a request containing `category` is rejected. Keep this mismatch visible until the service and controller are reconciled.
+- The PATCH route requires an access token, but the update controller/service currently do not compare `req.user._id` with the video's `owner`. Authentication alone does not establish ownership; add a server-side owner check before treating video edits as owner-only.
+- `DELETE /videos/:key` checks the authenticated user against `video.owner` before calling `deleteVideoFromEverywhere`.
+- `deleteVideoFromEverywhere` deletes the thumbnail object, MongoDB video record, and decrements the channel's total video count. The video-object S3 deletion call is currently commented out, so the video object can remain orphaned. The service also requires both storage keys to be present.
+- The channel comparison inside `deleteVideoFromEverywhere` compares the video's channel ID with the channel document loaded from that same ID; it is not an ownership check. Keep authorization in the controller or replace it with an actual owner relationship check.
 
 ## File Upload Logic
 

@@ -198,7 +198,7 @@ export default function MyChannelPage() {
                             </div>
                             <p>@{channelHandle || "channel"} · {formatCount(subscriberCount)} subscribers · {formatCount(videos.length)} videos</p>
                         </div>
-                        
+
                     </div>
 
                     <nav className={styles.tabs} aria-label="My channel sections">
@@ -314,7 +314,7 @@ export default function MyChannelPage() {
                                                 } : undefined}
                                             >
                                                 <div className={styles.thumbnailPattern} />
-                                                <button type="button" className={styles.thumbnailEdit} aria-label={`Edit ${item.title}`}>
+                                                <button type="button"  onClick={() => router.push(`/dashboard/videos/${item._id}/edit`)} className={styles.thumbnailEdit} aria-label={`Edit ${item.title}`}>
                                                     <MdEdit />
                                                 </button>
                                                 <span className={styles.duration}>{formatDuration(item.duration)}</span>

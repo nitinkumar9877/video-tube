@@ -1,10 +1,10 @@
 const { Router } = require("express");
 const authRoutes = Router();
 const passport = require('passport');
-const { signUp, login, logout, refreshToken, myProfile } = require("../controllers/auth.controllers.js");
+const { signUp, login, logout, refreshToken, myProfile, getUserProfile } = require("../controllers/auth.controllers.js");
 const { accessTokenValidation, refreshTokenValidation } = require("../middleware/auth.middleware.js");
 const { createChannel, getMyChannel, getSubscribedChannelsByUser, suscribeOrUnsubscribeChannel } = require("../controllers/channel.controller.js");
-const { videoUpload, getAllVideos, getVideo, deleteVideo, updateVideoDetails, myVideos, likeVideo, createVideoComments, getVideoComments, deleteVideoComments } = require("../controllers/video.controller.js");
+const { videoUpload, getAllVideos, getVideo, deleteVideo, updateVideoDetails, myVideos, likeVideo, createVideoComments, getVideoComments, deleteVideoComments, getMyLikedVideos, removeLike } = require("../controllers/video.controller.js");
 const { uploadVideo, uploadImage, uploadVideoAndThumbnail } = require("../middleware/multer.middleware.js");
 const { googleAuthSignup } = require("../controllers/googleAuth.controller.js");
 
@@ -33,7 +33,8 @@ authRoutes.get('/videos/:id', getVideo);
 authRoutes.get('/my-videos', accessTokenValidation, myVideos); // /api/auth/videos/my-videos
 authRoutes.get('/my-videos/:id', myVideos); // /api/auth/videos/my-videos
 authRoutes.get('/videos/:key/comments', getVideoComments); // /api/auth/videos/:id/comments
-
+authRoutes.get('/users/:userId', getUserProfile);
+authRoutes.get('/my-liked-videos', accessTokenValidation, getMyLikedVideos); // /api/auth/videos/my-liked-videos
 // To login with Google
 
 
@@ -41,6 +42,5 @@ authRoutes.patch('/videos/:key', accessTokenValidation, updateVideoDetails);
 
 authRoutes.delete('/videos/:key', accessTokenValidation, deleteVideo);
 authRoutes.delete('/videos/:key/comment/:commentId', accessTokenValidation, deleteVideoComments);
-
-
+authRoutes.delete('/videos/:key/remove-like', accessTokenValidation, removeLike);
 module.exports = authRoutes
