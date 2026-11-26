@@ -309,11 +309,6 @@ const RegisterNewUser = () => {
         handleCreateAccount(e);
     };
 
-    // const handleGoogleLogin = () => {
-    //     console.log("Google login clicked");
-    //     window.location.href = 'http://localhost:5000/auth/google';
-    // }
-
     return (
         <main className={styles.registerPage}>
 
@@ -611,10 +606,6 @@ const RegisterNewUser = () => {
 
                 </form>
                 <div style={{ marginTop: "20px", textAlign: "center" }}>
-                    <p style={{ marginBottom: "12px" }}>
-                        Or continue with
-                    </p>
-
                     <GoogleLoginButton />
                 </div>
                 {/* <button
