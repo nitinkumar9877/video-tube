@@ -69,12 +69,13 @@ Route groups `(auth)` and `(main)` organize pages without changing URL paths.
 - loads Geist and Geist Mono;
 - imports global CSS;
 - wraps every page with `GoogleOAuthProvider`;
-- wraps every page with `AppShell`.
+- wraps `AppShell` in a Suspense boundary because the shell reads the current URL using `usePathname()`.
 
 `AppShell`:
 - is a client component;
 - detects `/login` and `/register-account` and bypasses the normal shell for auth pages;
 - calls `checkAlreadyLogin()` during mount to determine login state;
+- skips that session check on login/registration pages, which perform their own check;
 - displays login/signup links when logged out;
 - displays profile/logout controls when logged in;
 - closes profile menus on outside mouse events and Escape;
@@ -95,7 +96,7 @@ Functions:
 - `AuthRegisterUser(payload)`: POST `register-user` with credentials and cookies.
 - `AuthLoginUser(payload)`: POST `login`.
 - `logoutUser()`: POST `logout`.
-- `checkAlreadyLogin()`: POST `refresh-token`; returns `{ success: false }` on HTTP 401.
+- `checkAlreadyLogin()`: POST `refresh-token`; concurrent calls share one in-flight request and HTTP 401 returns `{ success: false }`.
 - `FetchUserData()`: GET `myProfile`; catches failures and returns a failed shape.
 - `AuthGoogleUser(credential)`: POST `Google-Register` with `{ credential }`.
 
@@ -177,13 +178,13 @@ Callers should tolerate:
 ## Video Services
 
 `src/services/videos.js`:
-- `getAllVideos()`: GET public video list.
+- `getAllVideos(cursor, limit)`: GET the public video feed using cursor pagination (24 items by default).
 - `getMyVideos()`: GET protected `/api/auth/my-videos` and normalizes `videos` to an array.
 - `uploadVideo(videoData)`: POST multipart protected `/api/auth/channels/upload-video`.
 - `getVideoById(id)`: GET public/dynamic video endpoint and increments backend view count.
 - `doLikeVideo(videoId)`: POST protected like endpoint.
 - `submitVideoComment(comment, videoId)`: POST `{ comment }` to the protected comment endpoint.
-- `getComments(videoId)`: GET comments, then resolves each author through `/users/:userId`.
+- `getComments(videoId)`: GET comments with the author fields populated by the backend.
 - `commentDelete(videoId, commentId)`: DELETE a comment.
 - `getMyLikedVideos()`: GET the authenticated user's liked videos.
 - `removeLike(videoId)`: DELETE the like relationship without deleting the video.
@@ -199,7 +200,7 @@ The `/dashboard/videos/[id]/edit` page checks login, loads existing video metada
 
 ## Main Content Pages
 
-- Home: loads all videos and presents video cards/feed behavior.
+- Home: loads public videos in cursor-paginated batches and offers a "Load more" action.
 - User/profile: loads profile/user-facing data and provides account navigation.
 - Channel creation: submits a multipart channel payload and channel logo.
 - My channel: reads the current user's channel and handles no-channel state.
@@ -223,9 +224,9 @@ Read the specific page before changing its behavior because route logic and UI s
 
 Keep class names and module imports stable unless changing a page's style. Next.js CSS Modules do not allow dynamically invented class names.
 
-## Next.js Image Configuration
+## Next.js Configuration
 
-`next.config.js` currently allows Next.js `<Image>` optimization for remote image URLs over both HTTP and HTTPS from any hostname using wildcard `remotePatterns`. Static/local imports and Next.js assets continue to work normally. This broad setting supports external profile, channel, thumbnail, and media resources, but also means remote image sources should be validated by the application before use.
+`next.config.mjs` is the single Next.js configuration file. It enables the React Compiler and cache components and allows Next.js `<Image>` optimization for remote image URLs over HTTP and HTTPS using wildcard `remotePatterns`. Static/local imports and Next.js assets continue to work normally. Validate external image sources before using them.
 
 ## Environment Variables
 
@@ -244,7 +245,7 @@ Current important contracts:
 - auth responses use `success`, `message`, and `user`;
 - protected requests rely on HTTP-only cookies and CORS credentials;
 - channel APIs use `channel`, `channels`, or `data.channel` shapes in different responses;
-- video list/detail/upload APIs use `data` arrays/objects;
+- video list/detail/upload APIs use `data` arrays/objects; the public list also returns `limit`, `hasMore`, and `nextCursor`;
 - comment creation sends `{ comment }`; comment reads return comment documents and the frontend resolves author profiles;
 - liked-video reads return full video documents in `data`; removing an item uses the dedicated DELETE `/videos/:key/remove-like` route;
 - video metadata edits send `{ title, description, category, tags }` through PATCH `/videos/:key`;
@@ -261,6 +262,7 @@ When a backend contract changes, update this file and `../backend/Agent.md` toge
 - Protected page actions should return or show an unauthorized state instead of silently assuming success.
 - Successful login/registration is cookie-backed; page redirects are not authentication themselves.
 - `checkAlreadyLogin` should remain the session check when adding protected navigation.
+- Public video browsing must not require login; private video details must be limited to their owner.
 
 ## Change Discipline
 
@@ -283,5 +285,5 @@ After every frontend change:
 - The video detail page supports likes, comments, subscriptions, and owner-only comment controls; ownership is represented by each loaded comment's `myComment` flag.
 - The liked-videos page uses API-backed load/unlike operations and expects video documents with `_id`, `title`, `thumbnailUrl`, `duration`, `views`, and optional channel metadata.
 - The edit-video route is API-backed and offers metadata editing plus confirmed deletion; it uses `src/components/styleSheets/editVideo.module.css`.
-- `next.config.js` allows remote `next/image` sources over HTTP and HTTPS from wildcard hostnames. Existing pages may still use plain `<img>` and produce an ESLint warning.
+- `next.config.mjs` is the sole Next.js config and allows remote `next/image` sources over HTTP and HTTPS from wildcard hostnames. Existing pages may still use plain `<img>` and produce an ESLint warning.
 - Frontend scripts are `npm run dev`, `npm run build`, `npm run start`, and `npm run lint`.

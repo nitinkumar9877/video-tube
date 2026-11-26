@@ -51,6 +51,8 @@ export default function AppShell({ children }) {
   const profileMenuRef = useRef(null);
   const pathname = usePathname();
   const router = useRouter();
+  const isAuthPage =
+    pathname.startsWith("/login") || pathname.startsWith("/register-account");
 
   useEffect(() => {
     const closeMenu = (event) => {
@@ -94,6 +96,8 @@ export default function AppShell({ children }) {
 
 
   useEffect(() => {
+    if (isAuthPage) return;
+
     let isMounted = true;
 
     const fetchUser = async () => {
@@ -125,7 +129,7 @@ export default function AppShell({ children }) {
       isMounted = false;
     };
 
-  }, []);
+  }, [isAuthPage]);
 
   const handleLogout = async () => {
     try {
@@ -135,9 +139,6 @@ export default function AppShell({ children }) {
       console.error("Logout failed:", error);
     }
   };
-  const isAuthPage =
-    pathname.startsWith("/login") || pathname.startsWith("/register-account");
-
   if (isAuthPage) {
     return children;
   }

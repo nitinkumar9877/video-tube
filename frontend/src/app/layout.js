@@ -1,4 +1,5 @@
 import { Geist, Geist_Mono } from "next/font/google";
+import { Suspense } from "react";
 import "./globals.css";
 import AppShell from "@/components/common/app-shell";
 import { GoogleOAuthProvider } from "@react-oauth/google";
@@ -25,7 +26,9 @@ export default function RootLayout({ children }) {
         <GoogleOAuthProvider
           clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}
         >
-          <AppShell>{children}</AppShell>
+          <Suspense fallback={<div className="appShellFallback" role="status">Loading PlayTube...</div>}>
+            <AppShell>{children}</AppShell>
+          </Suspense>
         </GoogleOAuthProvider>
       </body>
     </html>

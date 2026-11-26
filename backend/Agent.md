@@ -7,8 +7,8 @@ This file is the persistent implementation memory for the `backend/` portion of 
 ## Runtime and Entry Points
 
 - Runtime: Node.js CommonJS (`"type": "commonjs"` in `package.json`).
-- Start commands: `npm start` and `npm run dev` both run `nodemon server.js`.
-- `server.js` imports `src/app.js`, loads environment configuration, connects to MongoDB, then listens on `configData.PORT`.
+- Start commands: `npm start` runs `node server.js`; `npm run dev` runs `nodemon server.js`.
+- `server.js` waits for MongoDB before listening on `configData.PORT` and exits on startup failure.
 - `src/app.js` creates the Express app, enables CORS and cookie parsing, and mounts all application routes at `/api/auth`.
 - Production/development behavior is controlled by `NODE_ENV` and cookie settings in `src/utils/cookies.utils.js`.
 
@@ -37,8 +37,8 @@ Public routes:
 - `POST /login`: authenticate email/password and create cookie-backed sessions.
 - `POST /logout`: clear access and refresh cookies.
 - `POST /Google-Register`: verify a Google credential and create/link a user/session.
-- `GET /videos`: list videos.
-- `GET /videos/:id`: retrieve and increment a video's view count.
+- `GET /videos`: cursor-paginated public video list (`limit` 1-50, default 24; optional `cursor`).
+- `GET /videos/:id`: retrieve and increment a public/unlisted video's view count; private videos require the owner's access cookie.
 - `GET /videos/:key/comments`: list comments for a video.
 - `GET /users/:userId`: return a user profile used by the comments UI.
 
@@ -118,7 +118,11 @@ Refresh validation:
 - confirms a matching, unexpired `Token` session in MongoDB;
 - attaches `req.user`.
 
+Refresh rotation atomically replaces the matching session's refresh token instead of deleting all sessions from the same IP/user-agent and creating another record. A stale concurrent refresh receives HTTP 401 without clearing cookies, and database validation failures return HTTP 500 rather than pretending the user is logged out.
+
 When logout or session invalidation occurs, clear both cookies. Do not expose refresh or access tokens in JSON responses.
+
+The public video detail route uses optional access-token validation so anonymous requests can still retrieve public and unlisted videos. Private or unknown-visibility videos are only returned to their owner.
 
 ## Mongoose Models
 
@@ -172,6 +176,8 @@ Fields:
 - optional user agent and IP address;
 - timestamps.
 
+The `{ userId, refreshToken }` compound index supports refresh-session validation and rotation.
+
 ### Comment and Like
 
 `comments.model.js` and `likes.model.js` provide model definitions for comment/like data where used. Keep references consistent with the Mongoose names `Comment`, `Like`, `Video`, `Channel`, and `User`.
@@ -216,6 +222,8 @@ Video upload flow:
 5. If one upload fails, successfully uploaded objects are deleted as rollback.
 6. MongoDB video data is created through `uploadVideoDataToMongoDB`.
 
+The active multipart upload middleware stores files in memory and caps each file at 5 MB, with at most two files and bounded form fields. Keep this limit aligned with the frontend; use streaming or direct-to-S3 multipart uploads before raising it.
+
 Channel upload flow:
 1. Access middleware validates the user.
 2. Image middleware validates `Image`.
@@ -256,6 +264,8 @@ Never commit real secrets. `.env` is local configuration and must not be copied 
 
 Most success responses include `success: true` and a `message`. Data varies by endpoint: `data`, `channel`, `channels`, `video`, `user`, or `total...` fields.
 
+The public `GET /videos` response includes `data`, `limit`, `hasMore`, and `nextCursor`. A cursor can be passed back to fetch the next stable page. The endpoint only returns videos with `visibility: "public"` and avoids a full collection count on each page.
+
 Most validation/auth/server failures include `success: false` plus `message` or `error`. Status codes should remain HTTP-appropriate:
 - 400: missing/invalid input;
 - 401: missing/invalid/expired authentication;
@@ -269,7 +279,7 @@ Use `printCatchBlockError` for consistent controller/service logging where that 
 
 - `src/routes/post.routes.js` imports `passport` but does not currently mount Passport routes; Google uses the credential controller instead.
 - Route/key naming includes inconsistent video identifiers: public routes use `:id`, while update/delete/like routes use `:key`.
-- `videoSchema.index({ visibility: 1, status: 1 })` references a `status` field that is not declared in the current schema.
+- Public video pagination is supported by an index on `visibility`, `publishedAt`, and `_id`. If this index is deployed to an existing MongoDB database, confirm it is created by the deployment's index-management process.
 - The Google auth controller should be checked whenever Google behavior changes because it depends on several imports and token/session conventions.
 - Several controllers contain large `console.log` diagnostics. Preserve or remove deliberately, not incidentally.
 

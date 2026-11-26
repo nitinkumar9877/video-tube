@@ -28,7 +28,7 @@ const uploadImage = (req, res, next) => {
             }
             printCatchBlockError(error);
             if (error instanceof multer.MulterError || error.message === "Only JPEG, PNG, and WebP images are allowed") {
-                return res.status(400).json({
+                return res.status(error.code === "LIMIT_FILE_SIZE" ? 413 : 400).json({
                     success: false,
                     block: 'middleware',
                     message: error.message
@@ -57,7 +57,7 @@ const uploadVideo = (req, res, next) => {
             }
             printCatchBlockError(error);
             if (error instanceof multer.MulterError || error.message === "Only MP4, AVI, and MOV videos are allowed") {
-                return res.status(400).json({
+                return res.status(error.code === "LIMIT_FILE_SIZE" ? 413 : 400).json({
                     success: false,
                     message: error.message
                 });
@@ -104,7 +104,7 @@ const uploadVideoAndThumbnail = (req, res, next) => {
                 error.message === "Only JPEG, PNG, and WebP images are allowed" ||
                 error.message === "Only MP4, AVI, and MOV videos are allowed"
             ) {
-                return res.status(400).json({
+                return res.status(error.code === "LIMIT_FILE_SIZE" ? 413 : 400).json({
                     success: false,
                     block: "middleware",
                     message: error.message

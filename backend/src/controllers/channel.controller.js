@@ -80,11 +80,7 @@ const createChannel = async (req, res) => {
 
 const getMyChannel = async (req, res) => {
     try {
-        console.log("---------------- Get My Channel Controller ----------------");
-
         const channelId = req.user.channels?.[0];
-        console.log("1")
-        console.log("Channel ID:", channelId);
         if (!channelId) {
             return res.status(200).json({
                 success: true,
@@ -96,9 +92,6 @@ const getMyChannel = async (req, res) => {
             _id: channelId,
             owner: req.user._id
         });
-        console.log("2")
-        console.log("Channel:", channel);
-        console.log("----- Get My Channel Controller executed successfully -----");
         if (!channel) {
             return res.status(404).json({
                 success: false,
@@ -204,34 +197,27 @@ const getSubscribedChannelsByUser = async (req, res) => {
 
 const suscribeOrUnsubscribeChannel = async (req, res) => {
     try {
-        console.log("---------------- Subscribe/Unsubscribe Channel Controller ----------------");
         const userId = req.user?._id;
         const channelId = req.params.channelId;
-        console.log("1");
         if (!userId) {
             return res.status(401).json({
                 success: false,
                 error: "Unauthorized"
             });
         }
-        console.log("2");
-
         if (!channelId) {
             return res.status(400).json({
                 success: false,
                 error: "Channel ID is required"
             });
         };
-        console.log("3");
-        const user = await userModel.findById(userId);
-        console.log("User:", user);
+        const user = await userModel.findById(userId).select("_id subscribedChannels");
         if (!user) {
             return res.status(404).json({
                 success: false,
                 error: "User not found"
             });
         }
-        console.log("4");
         const channel = await channelModel.findById(channelId);
         if (!channel) {
             return res.status(404).json({
@@ -239,7 +225,6 @@ const suscribeOrUnsubscribeChannel = async (req, res) => {
                 error: "Channel not found"
             });
         }
-        console.log("5");
         if (channel.owner.toString() === userId.toString()) {
             return res.status(400).json({
                 success: false,
@@ -248,9 +233,7 @@ const suscribeOrUnsubscribeChannel = async (req, res) => {
 
             });
         };
-        console.log("6");
         const isSubscribed = user.subscribedChannels.includes(channelId);
-        console.log("7");
         if (isSubscribed) {
             user.subscribedChannels.pull(channelId);
             channel.subscribers.pull(userId);
@@ -280,7 +263,7 @@ const suscribeOrUnsubscribeChannel = async (req, res) => {
                 isOwner: false
             });
         }
-        console.log("----- Subscribe/Unsubscribe Channel Controller executed successfully -----");
+
 
     } catch (error) {
         printCatchBlockError(error);

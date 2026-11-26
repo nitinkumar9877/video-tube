@@ -36,16 +36,26 @@ const uploadVideoDataToMongoDB = async (userId, payLoadData) => {
         channel: channel._id
     });
 
-    // Save video first
     const savedVideo = await video.save();
 
-    // Increment total video count
-    await channelModel.findByIdAndUpdate(
-        channel._id,
-        {
-            $inc: { totalVideos: 1 }
+    try {
+        const updatedChannel = await channelModel.findByIdAndUpdate(
+            channel._id,
+            { $inc: { totalVideos: 1 } },
+            { new: true }
+        );
+
+        if (!updatedChannel) {
+            throw new Error("Channel was removed before the video count could be updated");
         }
-    );
+    } catch (error) {
+        try {
+            await VideoModel.deleteOne({ _id: savedVideo._id });
+        } catch (cleanupError) {
+            console.error("Failed to remove video after channel count update failed:", cleanupError);
+        }
+        throw error;
+    }
 
     return savedVideo;
 };
@@ -76,11 +86,10 @@ const deleteVideoFromEverywhere = async (objID) => {
     }
     console.log("Video Key  :: ", video.videoKey);
     console.log("Thumbnail Key  :: ", video.thumbnailKey);
-    // Step 1: Delete video from S3
-    // await deleteVideoObjectS3(video.videoKey);
-
-    // Step 2: Delete thumbnail from S3
-    await deleteThumbnailObjectS3(video.thumbnailKey);
+    await Promise.all([
+        deleteVideoObjectS3(video.videoKey),
+        deleteThumbnailObjectS3(video.thumbnailKey)
+    ]);
 
     // Step 3: Delete video from MongoDB
     const response = await VideoModel.findByIdAndDelete(objID);

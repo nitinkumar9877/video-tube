@@ -51,7 +51,11 @@ export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState("");
+  const [loadMoreError, setLoadMoreError] = useState("");
+  const [nextCursor, setNextCursor] = useState(null);
+  const [hasMore, setHasMore] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -65,6 +69,8 @@ export default function HomePage() {
 
         if (isMounted) {
           setVideos(response.data.filter((video) => video && (video._id || video.id)));
+          setNextCursor(response.nextCursor || null);
+          setHasMore(Boolean(response.hasMore));
         }
       } catch (error) {
         console.error("Error fetching videos:", error);
@@ -82,6 +88,36 @@ export default function HomePage() {
       isMounted = false;
     };
   }, []);
+
+  const loadMoreVideos = async () => {
+    if (loadingMore || !hasMore) return;
+
+    setLoadingMore(true);
+    setLoadMoreError("");
+
+    try {
+      const response = await getAllVideos(nextCursor);
+      if (!response?.success || !Array.isArray(response.data)) {
+        throw new Error(response?.message || "Unable to load more videos.");
+      }
+
+      setVideos((currentVideos) => {
+        const existingIds = new Set(currentVideos.map((video) => video._id || video.id));
+        const nextVideos = response.data.filter((video) => {
+          const videoId = video?._id || video?.id;
+          return videoId && !existingIds.has(videoId);
+        });
+        return [...currentVideos, ...nextVideos];
+      });
+      setNextCursor(response.nextCursor || null);
+      setHasMore(Boolean(response.hasMore));
+    } catch (loadError) {
+      console.error("Error loading more videos:", loadError);
+      setLoadMoreError(loadError.message || "Unable to load more videos. Please try again.");
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const filteredVideos = useMemo(() => {
     if (selectedCategory === "All") return videos;
@@ -170,6 +206,19 @@ export default function HomePage() {
           })
         )}
       </section>
+      {loadMoreError && <p className={styles.loadMoreError} role="alert">{loadMoreError}</p>}
+      {hasMore && (
+        <div className={styles.loadMoreContainer}>
+          <button
+            type="button"
+            className={styles.loadMoreButton}
+            onClick={loadMoreVideos}
+            disabled={loadingMore}
+          >
+            {loadingMore ? "Loading videos..." : "Load more"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

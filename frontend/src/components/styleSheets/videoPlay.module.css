@@ -495,6 +495,22 @@
     gap: 12px;
 }
 
+.loadMoreComments {
+    display: block;
+    margin: 16px auto;
+    padding: 8px 16px;
+    border: 0;
+    border-radius: 4px;
+    background-color: #182f97;
+    color: white;
+    cursor: pointer;
+}
+
+.loadMoreComments:disabled {
+    cursor: wait;
+    opacity: 0.7;
+}
+
 .commentItem {
     height: 100%;
     padding: 10px;

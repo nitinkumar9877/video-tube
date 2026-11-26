@@ -1,5 +1,7 @@
 import axios from "axios";
 
+let loginCheckPromise = null;
+
 export const AuthRegisterUser = async (payload) => {
     try {
         const registeredUserApi = `${process.env.NEXT_PUBLIC_API_URL}${process.env.NEXT_PUBLIC_AUTH_API_PATH}register-user`;
@@ -50,25 +52,31 @@ export const logoutUser = async () => {
 };
 
 export const checkAlreadyLogin = async () => {
+    if (loginCheckPromise) {
+        return loginCheckPromise;
+    }
+
     const checkLoginApi = `${process.env.NEXT_PUBLIC_API_URL}${process.env.NEXT_PUBLIC_AUTH_API_PATH}refresh-token`;
 
-    try {
-        const response = await axios.post(checkLoginApi, {}, {
-            withCredentials: true,
-            timeout: 15000
-        });
-
+    loginCheckPromise = axios.post(checkLoginApi, {}, {
+        withCredentials: true,
+        timeout: 15000
+    }).then((response) => {
         if (response?.data?.success) {
             return response.data;
         }
-    } catch (error) {
+
+        return { success: false, message: "User is not logged in" };
+    }).catch((error) => {
         if (error.response?.status === 401) {
             return { success: false, message: "User is not logged in" };
         }
         throw error;
-    }
+    }).finally(() => {
+        loginCheckPromise = null;
+    });
 
-    return { success: false, message: "User is not logged in" };
+    return loginCheckPromise;
 };
 
 export const FetchUserData = async () => {

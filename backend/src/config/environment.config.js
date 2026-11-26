@@ -29,16 +29,6 @@ if (!process.env.GOOGLE_CLIENT_ID) {
     throw new Error("GOOGLE_CLIENT_ID is not defined in the environment variables");
 }
 
-if (!process.env.GOOGLE_CLIENT_SECRET) {
-    throw new Error("GOOGLE_CLIENT_SECRET is not defined in the environment variables");
-}
-if (!process.env.BASE_URL) {
-    throw new Error("BASE_URL is not defined in the environment variables");
-}
-if(!process.env.FRONTEND_URL){
-    throw new Error("FRONTEND_URL is not defined in the environment variables")
-}
-
 const configData = {
     PORT: process.env.PORT,
     MONGODBURL: process.env.MONGODBURL,

@@ -1,12 +1,10 @@
 const userModel = require("../models/user.model");
-const imagekit = require("../config/imagekit.config.js");
 const { generateToken } = require("../config/token.config.js");
 const validator = require("validator");
 const bcrypt = require("bcryptjs");
 const TokenModel = require("../models/Token.model.js");
 const { setAccessTokenCookie, setRefreshTokenCookie } = require("../utils/cookies.utils.js");
 const mongoose = require("mongoose");
-const { sha256hashConverter } = require("../utils/hash.utils.js");
 const { clearAccessTokenCookie, clearRefreshTokenCookie } = require("../utils/cookies.utils.js");
 
 
@@ -249,7 +247,6 @@ const signUp = async (req, res) => {
 
 const login = async (req, res) => {
     try {
-        console.log("1");
         const { email, password } = req.body;
 
         if (!email || !password) {
@@ -258,12 +255,9 @@ const login = async (req, res) => {
                 message: "Email and password are required"
             });
         }
-        console.log("2");
-
         const user = await userModel.findOne({
             email: email.toLowerCase().trim()
         }).select("+password");
-        console.log("3");
 
         if (!user) {
             return res.status(401).json({
@@ -271,12 +265,10 @@ const login = async (req, res) => {
                 message: "Invalid email or password"
             });
         }
-        console.log("4");
         const isPasswordValid = await bcrypt.compare(
             password,
             user.password
         );
-        console.log("5");
 
         if (!isPasswordValid) {
             return res.status(401).json({
@@ -284,11 +276,9 @@ const login = async (req, res) => {
                 message: "Invalid email or password"
             });
         }
-        console.log("6");
 
         // Generate a unique session ID
         const sessionId = new mongoose.Types.ObjectId();
-        console.log("7");
 
         // Generate access and refresh tokens
         const tokens = generateToken({ userId: user._id });
@@ -296,9 +286,6 @@ const login = async (req, res) => {
             throw new Error("Token generation failed");
         }
         const { accessToken, refreshToken } = tokens;
-        console.log("8");
-        console.log("9");
-
         // Create session in MongoDB
         await TokenModel.create({
             _id: sessionId,
@@ -308,15 +295,11 @@ const login = async (req, res) => {
             userAgent: req.get("user-agent") || null,
             ipAddress: req.ip
         });
-        console.log("10");
-
         // Store access token in HttpOnly cookie
         setAccessTokenCookie(res, accessToken);
 
-        console.log("11");
         // Store refresh token in HttpOnly cookie
         setRefreshTokenCookie(res, refreshToken);
-        console.log("12");
 
         return res.status(200).json({
             success: true,
@@ -342,64 +325,66 @@ const login = async (req, res) => {
     }
 };
 
-const logout = (req, res) => {
+const logout = async (req, res) => {
     try {
+        const refreshToken = req.cookies?.refreshToken;
+        if (refreshToken) {
+            await TokenModel.deleteOne({ refreshToken });
+        }
+
         clearAccessTokenCookie(res);
         clearRefreshTokenCookie(res);
-        res.status(200).json({ success: true, message: "Logout successful" });
+        return res.status(200).json({ success: true, message: "Logout successful" });
     } catch (error) {
         console.error("Error during logout:", error);
-        res.status(500).json({ success: false, message: "Internal server error" });
+        clearAccessTokenCookie(res);
+        clearRefreshTokenCookie(res);
+        return res.status(500).json({ success: false, message: "Internal server error" });
     }
 }
 
 const refreshToken = async (req, res) => {
     try {
-        console.log("----------------------Refresh Token controller start here----------------------");
-        const user = req.user; // Assuming user is attached to req in middleware
-        console.log("User from middleware:", user);
-        const userPreviousToken = await TokenModel.find({ userId: user._id });
-        console.log("Previous token for user:", userPreviousToken);
-        if (userPreviousToken) {
-            // Delete every previous token for the user whose ip is same from the current request and user agent is same from the current request
-            await TokenModel.deleteMany({
-                userId: user._id,
-                ipAddress: req.ip,
-                userAgent: req.get("user-agent") || null
-            });
-        }
+        const user = req.user;
         const tokens = generateToken({ userId: user._id });
         if (!tokens?.accessToken || !tokens.refreshToken) {
             throw new Error("Token generation failed");
         }
         const { accessToken, refreshToken } = tokens;
-        console.log("New tokens generated successfully");
-        console.log("1");
+        const rotatedSession = await TokenModel.findOneAndUpdate(
+            {
+                userId: user._id,
+                refreshToken: req.cookies?.refreshToken,
+                expiresAt: { $gt: new Date() }
+            },
+            {
+                $set: {
+                    refreshToken,
+                    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                    userAgent: req.get("user-agent") || null,
+                    ipAddress: req.ip
+                }
+            },
+            { new: true, runValidators: true }
+        );
+
+        if (!rotatedSession) {
+            return res.status(401).json({
+                success: false,
+                message: "Refresh token session is no longer valid."
+            });
+        }
+
         setRefreshTokenCookie(res, refreshToken);
-        console.log("2");
         setAccessTokenCookie(res, accessToken);
-        console.log("3");
-        // Generate a unique session ID
-        const sessionId = new mongoose.Types.ObjectId();
-        await TokenModel.create({
-            _id: sessionId,
-            userId: user._id,
-            refreshToken: refreshToken,
-            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-            userAgent: req.get("user-agent") || null,
-            ipAddress: req.ip
-        });
-        console.log("------------------------successfully refreshed the access token and refresh token------------------------");
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
-            message: "Access token refreshed",
-            accessToken: accessToken
+            message: "Access token refreshed"
         });
     }
     catch (error) {
-        console.log("----------------------Refresh Token controller catch block start here----------------------");
         console.error("Error during token refresh:", error);
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: "Internal server error"
         });
@@ -445,6 +430,13 @@ const getUserProfile = async (req, res) => {
             return res.status(400).json({
                 success: false,
                 message: "User ID is required"
+            });
+        }
+
+        if (!mongoose.isValidObjectId(userId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid user ID"
             });
         }
 

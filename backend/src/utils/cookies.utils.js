@@ -28,7 +28,6 @@ const setAccessTokenCookie = (res, accessToken) => {
 
 // Clear Access Token
 const clearAccessTokenCookie = (res) => {
-    return;
     res.clearCookie(
         "accessToken",
         getCookieOptions()
@@ -37,7 +36,6 @@ const clearAccessTokenCookie = (res) => {
 
 // Clear Refresh Token
 const clearRefreshTokenCookie = (res) => {
-    return;
     res.clearCookie(
         "refreshToken",
         getCookieOptions()

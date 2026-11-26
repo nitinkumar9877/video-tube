@@ -56,12 +56,22 @@ export default function VideoPlayPage() {
     const [commentText, setCommentText] = useState("");
     const [submittingComment, setSubmittingComment] = useState(false);
     const [currentUserId, setCurrentUserId] = useState("");
+    const [commentCursor, setCommentCursor] = useState(null);
+    const [hasMoreComments, setHasMoreComments] = useState(false);
+    const [loadingMoreComments, setLoadingMoreComments] = useState(false);
 
     useEffect(() => {
         if (!id) return;
         // let mounted = true;
         const loadVideo = async () => {
             try {
+                let checkLogin = null;
+                try {
+                    checkLogin = await checkAlreadyLogin();
+                } catch (authError) {
+                    console.error("Unable to refresh login before loading video:", authError);
+                }
+
                 const response = await getVideoById(id);
                 if (!response || !response.success) {
                     throw new Error("Failed to fetch video data");
@@ -78,10 +88,12 @@ export default function VideoPlayPage() {
                         ...prevVideo,
                         comments: addCommentOwnership(getVideoAllComments?.data),
                     }));
+                    setCommentCursor(getVideoAllComments.nextCursor || null);
+                    setHasMoreComments(Boolean(getVideoAllComments.hasMore));
                 } else {
                     console.error("Failed to fetch comments:", getVideoAllComments?.message);
                 };
-                const checkLogin = await checkAlreadyLogin();
+
                 if (checkLogin?.success) {
                     const userResponse = await FetchUserData();
                     const user = userResponse?.data?.user;
@@ -281,6 +293,8 @@ export default function VideoPlayPage() {
                     ...prevVideo,
                     comments: addCommentOwnership(getVideoAllComments?.data, currentUserId),
                 }));
+                setCommentCursor(getVideoAllComments.nextCursor || null);
+                setHasMoreComments(Boolean(getVideoAllComments.hasMore));
             } else {
                 console.error("Failed to fetch comments:", getVideoAllComments?.message);
             };
@@ -309,18 +323,40 @@ export default function VideoPlayPage() {
             }
 
             setError("");
-            const getVideoAllComments = await getComments(id);
-            if (getVideoAllComments?.success) {
-                setVideo((prevVideo) => ({
-                    ...prevVideo,
-                    comments: addCommentOwnership(getVideoAllComments?.data, currentUserId),
-                }));
-            } else {
-                console.error("Failed to fetch comments:", getVideoAllComments?.message);
-            };
+            setVideo((prevVideo) => ({
+                ...prevVideo,
+                comments: (prevVideo.comments || []).filter(
+                    (comment) => String(comment._id) !== String(commentId)
+                ),
+            }));
 
         } catch (deleteError) {
             setError(deleteError?.message || "Failed to delete comment.");
+        }
+    };
+
+    const loadMoreComments = async () => {
+        if (loadingMoreComments || !hasMoreComments || !commentCursor) return;
+
+        setLoadingMoreComments(true);
+        try {
+            const response = await getComments(id, commentCursor);
+            if (!response?.success || !Array.isArray(response.data)) {
+                throw new Error(response?.message || "Unable to load more comments.");
+            }
+            setVideo((prevVideo) => ({
+                ...prevVideo,
+                comments: [
+                    ...(prevVideo.comments || []),
+                    ...addCommentOwnership(response.data, currentUserId),
+                ],
+            }));
+            setCommentCursor(response.nextCursor || null);
+            setHasMoreComments(Boolean(response.hasMore));
+        } catch (loadError) {
+            setError(loadError?.message || "Unable to load more comments.");
+        } finally {
+            setLoadingMoreComments(false);
         }
     };
 
@@ -495,6 +531,16 @@ export default function VideoPlayPage() {
                                 <p>No comments yet. Be the first to comment!</p>
                             )}
                         </div>
+                        {hasMoreComments && (
+                            <button
+                                type="button"
+                                className={styles.loadMoreComments}
+                                onClick={loadMoreComments}
+                                disabled={loadingMoreComments}
+                            >
+                                {loadingMoreComments ? "Loading comments..." : "Load more comments"}
+                            </button>
+                        )}
 
                     </div>
                 </section>

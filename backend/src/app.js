@@ -35,4 +35,40 @@ app.use(cookieParser());
 
 app.use("/api/auth", authRoutes);
 
+app.use((error, req, res, next) => {
+    if (res.headersSent) {
+        return next(error);
+    }
+
+    if (error instanceof require("multer").MulterError) {
+        const status = error.code === "LIMIT_FILE_SIZE" ? 413 : 400;
+        return res.status(status).json({
+            success: false,
+            message: error.code === "LIMIT_FILE_SIZE"
+                ? "Uploaded file exceeds the 5 MB limit."
+                : error.message
+        });
+    }
+
+    if (error.type === "entity.too.large") {
+        return res.status(413).json({
+            success: false,
+            message: "Request body is too large."
+        });
+    }
+
+    if (error.type === "entity.parse.failed") {
+        return res.status(400).json({
+            success: false,
+            message: "Request body contains invalid JSON."
+        });
+    }
+
+    console.error("Unhandled request error:", error);
+    return res.status(500).json({
+        success: false,
+        message: "Internal server error."
+    });
+});
+
 module.exports = app;

@@ -32,7 +32,7 @@ const commentSchema = new mongoose.Schema(
     }
 );
 
-commentSchema.index({ video: 1, createdAt: -1 });
+commentSchema.index({ video: 1, createdAt: -1, _id: -1 });
 
 const CommentModel = mongoose.model("Comment", commentSchema);
 module.exports = CommentModel;
